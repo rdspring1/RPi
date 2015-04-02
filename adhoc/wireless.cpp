@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
 			// Default Broadcast: 255.255.255.255 / ff::ff::ff::ff
 			// Subnet Broadcast: private ip address space | (~subnet mask)
 			// i.e. 10.42.0.0/24 | 255.255.255.0 -> 10.42.0.255
-			sender = new udp_sender(ioservice, boost::asio::ip::address::from_string(argv[1]));
+			sender = new udp_sender(ioservice, boost::asio::ip::address::from_string(argv[1]), port);
 		}
 		ioservice.run();
 	}
