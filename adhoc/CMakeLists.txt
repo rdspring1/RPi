@@ -15,4 +15,5 @@ add_executable(Adhoc wireless.cpp)
 
 target_link_libraries (Adhoc
 	${Boost_SYSTEM_LIBRARY}
+	pthread
 )
