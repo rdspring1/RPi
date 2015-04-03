@@ -5,6 +5,7 @@
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
+#include <exception>
 
 using namespace cv;
 
@@ -24,6 +25,12 @@ void processImage(ORB& detector, std::vector<KeyPoint> keypoints_object, Mat& de
 	Mat descriptors_scene;
 	detector.compute( img_scene, keypoints_scene, descriptors_scene );
 	descriptors_scene.convertTo(descriptors_scene, CV_32F);
+	if(descriptors_scene.empty())
+	{
+		//throw std::runtime_error("Missing Scene Descriptors");
+		imshow( "Camera", img_scene );
+		return;
+	}
 
 	//-- Step 3: Matching descriptor vectors using FLANN matcher
 	FlannBasedMatcher matcher;
@@ -46,7 +53,7 @@ void processImage(ORB& detector, std::vector<KeyPoint> keypoints_object, Mat& de
 	std::vector< DMatch > good_matches;
 
 	for( int i = 0; i < descriptors_object.rows; i++ )
-	{ if( matches[i].distance < 2.5*min_dist )
+	{ if( matches[i].distance < 3.0*min_dist )
 		{ good_matches.push_back( matches[i]); }
 	}
 
@@ -56,8 +63,11 @@ void processImage(ORB& detector, std::vector<KeyPoint> keypoints_object, Mat& de
 			vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
 
 	//-- Show detected matches
-	imshow( "Good Matches & Object detection", img_matches );
+	imshow( "Camera", img_matches );
 }
+
+#define WIDTH 160
+#define HEIGHT 120
 
 /** @function main */
 int main( int argc, char** argv )
@@ -74,6 +84,8 @@ int main( int argc, char** argv )
 		std::cout << "Cannot open video camera" << std::endl;
 		return 1;
 	}
+    	cap.set(CV_CAP_PROP_FRAME_WIDTH, WIDTH);
+    	cap.set(CV_CAP_PROP_FRAME_HEIGHT, HEIGHT);
 
 	ORB detector;
 
@@ -85,6 +97,11 @@ int main( int argc, char** argv )
 	Mat descriptors_object;
 	detector.compute( img_object, keypoints_object, descriptors_object );
 	descriptors_object.convertTo(descriptors_object, CV_32F);
+
+	if(descriptors_object.empty())
+	{
+		throw std::runtime_error("Missing Object Descriptors");
+	}
 
 	while(true)
 	{
