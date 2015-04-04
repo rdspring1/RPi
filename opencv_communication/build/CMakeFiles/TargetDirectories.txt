@@ -1,1 +1,0 @@
-/home/rdspring/RPi/opencv_communication/build/CMakeFiles/opencv_communication.dir
