@@ -1,13 +1,14 @@
 #include "udp_sender.h"
 #include "udp_receiver.h"
 #include "detect.h"
+#include "message.h"
 #include <iostream>
 #include <string>
 
-const std::string SEND = "SEND";
+const short port = 13;
 
-#define WIDTH 160
-#define HEIGHT 120
+const int WIDTH = 160;
+const int HEIGHT = 120;
 
 /** @function readme */
 void readme()
@@ -18,36 +19,31 @@ void readme()
 /** @function main */
 int main( int argc, char** argv )
 {
-	const short port = 13;
-	boost::asio::io_service ioservice;
-	udp_receiver* receiver = NULL;
-	udp_sender* sender = NULL;
-	try
-	{
-		receiver = new udp_receiver(ioservice, port);
-		sender = new udp_sender(ioservice, boost::asio::ip::address::from_string(argv[1]), port);
-		ioservice.run();
-	}
-	catch (std::exception& e)
-	{
-		std::cerr << e.what() << std::endl;
-	}
-
+	// Collect Arguments
 	if( argc != 3 )
 	{ 
 		readme(); 
 		return -1; 
 	}
 
-	//Mat img_object = imread( argv[1], CV_LOAD_IMAGE_GRAYSCALE );
-	Mat img_object = imread( argv[1]);
-	if( !img_object.data )
-	{ 
-		std::cout<< " --(!) Error reading images " << std::endl; 
-		return -1; 
+	// Setup Bi-Direction Communication
+	boost::asio::io_service ios_send;
+	boost::asio::io_service ios_receive;
+	udp_receiver<msg>* receiver = NULL;
+	udp_sender<msg>* sender = NULL;
+	try
+	{
+		receiver = new udp_receiver<msg>(ios_receive, port);
+		sender = new udp_sender<msg>(ios_send, boost::asio::ip::address::from_string(argv[1]), port);
+		ios_receive.run();
+		ios_send.run();
+	}
+	catch (std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;
 	}
 
-
+	// Construct OpenCV video camera interface
 	VideoCapture cap(0);
 	if(!cap.isOpened())
 	{
@@ -56,6 +52,15 @@ int main( int argc, char** argv )
 	}
 	cap.set(CV_CAP_PROP_FRAME_WIDTH, WIDTH);
 	cap.set(CV_CAP_PROP_FRAME_HEIGHT, HEIGHT);
+
+	// Initialize object feature
+	//Mat img_object = imread( argv[1], CV_LOAD_IMAGE_GRAYSCALE );
+	Mat img_object = imread( argv[1]);
+	if( !img_object.data )
+	{ 
+		std::cout<< " --(!) Error reading images " << std::endl; 
+		return -1; 
+	}
 
 	ORB detector(POINTS);
 	//-- Step 1: Detect the keypoints using ORB Detector
@@ -72,6 +77,9 @@ int main( int argc, char** argv )
 		throw std::runtime_error("Missing Object Descriptors");
 	}
 
+	// Detection Algorithm
+	std::vector<msg> neighbor_matches;
+	std::vector<msg> good_matches;
 	detect d(detector, keypoints_object, descriptors_object, img_object);
 	while(true)
 	{
@@ -85,7 +93,14 @@ int main( int argc, char** argv )
 			return -1; 
 		}
 
-		d.processImage(img_scene);
+		receiver->async_receive_msgs(neighbor_matches);
+		bool success = d.processImage(img_scene, good_matches, neighbor_matches);
+		if(success)
+		{
+			// Broadcast good features to neighbors	
+			sender->async_send_msgs(good_matches);
+			good_matches.clear();
+		}
 
 		if(waitKey(50) >= 0)
 		{

@@ -1,3 +1,7 @@
+// Local
+#include "message.h"
+
+// STL
 #include <stdio.h>
 #include <iostream>
 #include <exception>
@@ -5,6 +9,7 @@
 #include <list>
 #include <algorithm>
 
+// OpenCV
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
@@ -28,7 +33,7 @@ public:
 	: detector_(detector), keypoints_object_(keypoints_object), descriptors_object_(descriptors_object), img_object_(img_object)
 	{}
 
-	void processImage(Mat& img_scene)
+	bool processImage(Mat& img_scene, std::vector< msg >& good_matches, std::vector< msg >& neighbor_matches)
 	{
 		//-- Step 1: Detect the keypoints using ORB Detector
 		std::vector<KeyPoint> keypoints_scene;
@@ -42,7 +47,7 @@ public:
 		{
 			//throw std::runtime_error("Missing Scene Descriptors");
 			imshow( "Camera", img_scene );
-			return;
+			return false;
 		}
 
 		//-- Step 3: Matching descriptor vectors using FLANN matcher
@@ -60,12 +65,9 @@ public:
 				return l.distance < r.distance;
 				});
 
-		//-- Quick calculation of max and min distances between keypoints
+		//-- Quick calculation of max, min, avg, sd distances between keypoints
 		//double max_dist = matches[matches.size()-1].distance; 
 		//printf("-- Max dist : %f \n", max_dist );
-
-		double min_dist = std::min(200.0f, matches[0].distance); 
-		//printf("-- Min dist : %f \n", min_dist );
 
 		/*
 		   double average = 0;
@@ -84,39 +86,52 @@ public:
 		   sd /= descriptors_object.rows;
 		   printf("-- Avg dist : %f \n", sd );
 		 */
+		double min_dist = std::min(200.0f, matches[0].distance); 
+		//printf("-- Min dist : %f \n", min_dist );
 
-		//-- Draw only "good" matches - top N matches
-		std::vector< DMatch > good_matches;
-		for( unsigned i = 0; i < matches.size() && i < MAX_MATCH_COUNT; ++i )
+		//-- Draw only local "good" matches - top N matches
+		std::vector< DMatch > local_matches;
+		for( unsigned i = 0; i < matches.size() && local_matches.size() < MAX_MATCH_COUNT; ++i )
 		{
 			if(matches[i].distance < 1.15 * min_dist)
 			{
-				good_matches.push_back(matches[i]); 
+				local_matches.push_back(matches[i]); 
 			}
 		}
 
 		Mat img_matches;
 		drawMatches( img_object_, keypoints_object_, img_scene, keypoints_scene,
-				good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
+				local_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
 				vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
 
+		// Determine if object is detected
 		if(match_list.front())
 		{
 			--match_count;
 		}	
 		match_list.pop_front();
 
-		if(good_matches.size() > MIN_MATCH_COUNT)
+		if((local_matches.size() + neighbor_matches.size()) > MIN_MATCH_COUNT)
 		{
 			match_list.push_back(true);
 			++match_count;
 
-			//std::cout << "-- matches : " << good_matches.size() << std::endl;
+			//std::cout << "-- matches : " << (local_matches.size() + neighbor_matches.size()) << std::endl;
 			std::vector<Point2f> scene;
-			for( unsigned i = 0; i < good_matches.size(); i++ )
+			for( unsigned i = 0; i < local_matches.size(); ++i )
 			{
 				//-- Get the keypoints from the good matches
-				scene.push_back( keypoints_scene[ good_matches[i].trainIdx ].pt );
+				scene.push_back( keypoints_scene[ local_matches[i].trainIdx ].pt );
+				good_matches.push_back( make_msg(keypoints_object_[ local_matches[i].trainIdx ].pt, 
+					keypoints_scene[ local_matches[i].trainIdx ].pt,
+					local_matches[i].distance) );
+					
+			}
+
+			for( unsigned i = 0; i < neighbor_matches.size(); ++i )
+			{
+				//-- Get the keypoints from the good matches
+				scene.push_back( neighbor_matches[i].scene );
 			}
 
 			std::vector<Point2f> hull;
@@ -144,6 +159,7 @@ public:
 
 		//-- Show detected matches
 		imshow( "Camera", img_matches );
+		return true;
 	}
 
 private:
