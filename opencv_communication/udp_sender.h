@@ -18,7 +18,7 @@ class udp_sender
 		socket_.set_option(boost::asio::socket_base::broadcast(true));
 	}
 
-		const unsigned long message_id()
+		const unsigned message_id()
 		{
 			return message_count_;
 		}
@@ -58,6 +58,6 @@ class udp_sender
 	private:
 		boost::asio::ip::udp::socket socket_;
 		boost::asio::ip::udp::endpoint endpoint_;
-		unsigned long message_count_;
+		unsigned message_count_;
 };
 

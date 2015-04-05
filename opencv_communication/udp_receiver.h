@@ -41,6 +41,7 @@ class udp_receiver
 		{
 			if (!error)
 			{
+				//std::cout << bytes_recvd << " " << sizeof(T) << std::endl;
 				if(bytes_recvd == sizeof(T))
 				{
 					// lock
@@ -48,6 +49,7 @@ class udp_receiver
 
 					// cast buffer to template type T
 					T* data = reinterpret_cast<T*>(data_);
+					//std::cout << "Message Received - Successfully" << std::endl;
 
 					// add new msg to stored data
 					stored_data.push_back(*data);

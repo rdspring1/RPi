@@ -5,7 +5,7 @@
 
 struct msg
 {
-	unsigned long message_id;
+	unsigned message_id;
 	cv::Point2f object;
 	cv::Point2f scene;
 	float distance;
