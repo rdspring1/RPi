@@ -10,7 +10,7 @@ class udp_sender
 {
 	public:
 		udp_sender(boost::asio::io_service& io_service, const boost::asio::ip::address& address, unsigned short port)
-			: socket_(io_service, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port)),
+			: socket_(io_service, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port+1)),
 			endpoint_(address, port),
 			message_count_(0)
 	{

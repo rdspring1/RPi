@@ -3,8 +3,6 @@
 #include <iostream>
 #include <string>
 
-const std::string SEND = "SEND";
-
 int main(int argc, char* argv[])
 {
 	bool send = false;

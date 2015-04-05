@@ -4,6 +4,7 @@
 #include "message.h"
 #include <iostream>
 #include <string>
+#include <boost/thread.hpp>
 
 const short port = 13;
 
@@ -16,6 +17,15 @@ void readme()
 	std::cout << " Usage: ./opencv_communication <object> <ip_address>" << std::endl; 
 }
 
+void receiver(boost::asio::io_service ios_receive)
+{
+	ios_receive.run();
+}
+
+void sender(boost::asio::io_service ios_send)
+{
+	ios_send.run();
+}
 /** @function main */
 int main( int argc, char** argv )
 {
@@ -34,14 +44,15 @@ int main( int argc, char** argv )
 	try
 	{
 		receiver = new udp_receiver<msg>(ios_receive, port);
-		sender = new udp_sender<msg>(ios_send, boost::asio::ip::address::from_string(argv[1]), port);
-		ios_receive.run();
-		ios_send.run();
+		sender = new udp_sender<msg>(ios_send, boost::asio::ip::address::from_string(argv[2]), port);
 	}
 	catch (std::exception& e)
 	{
 		std::cerr << e.what() << std::endl;
+		return -1;
 	}
+	boost::thread asio_send(boost::bind(&boost::asio::io_service::run, &ios_send));
+	boost::thread asio_receiver(boost::bind(&boost::asio::io_service::run, &ios_receive));
 
 	// Construct OpenCV video camera interface
 	VideoCapture cap(0);

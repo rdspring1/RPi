@@ -116,7 +116,7 @@ public:
 			match_list.push_back(true);
 			++match_count;
 
-			//std::cout << "-- matches : " << (local_matches.size() + neighbor_matches.size()) << std::endl;
+			std::cout << "-- matches : " << local_matches.size() << " " << neighbor_matches.size() << std::endl;
 			std::vector<Point2f> scene;
 			for( unsigned i = 0; i < local_matches.size(); ++i )
 			{
