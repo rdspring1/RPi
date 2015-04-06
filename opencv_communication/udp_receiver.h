@@ -46,10 +46,18 @@ class udp_receiver
 				{
 					// lock
 					mtx_.lock();
+					
+					++last_message_id;
 
 					// cast buffer to template type T
 					T* data = reinterpret_cast<T*>(data_);
 					//std::cout << "Message Received - Successfully" << std::endl;
+
+					if(data->message_id != last_message_id)
+					{
+						last_message_id = data->message_id;
+						++lost_message_count;
+					}
 
 					// add new msg to stored data
 					stored_data.push_back(*data);
@@ -70,6 +78,8 @@ class udp_receiver
 
 		boost::asio::ip::udp::socket socket_;
 		boost::asio::ip::udp::endpoint sender_endpoint_;
+		unsigned last_message_id = 0;
+		unsigned lost_message_count = 0;
 		std::vector<T> stored_data;
 		boost::mutex mtx_;
 		char data_[sizeof(T)];

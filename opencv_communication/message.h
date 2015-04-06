@@ -6,14 +6,15 @@
 struct msg
 {
 	unsigned message_id;
-	cv::Point2f object;
+	unsigned object_id;
+	int object_feature_idx;
 	cv::Point2f scene;
 	float distance;
 }; 
 
-msg make_msg(cv::Point2f& obj, cv::Point2f& sce, float dist)
+msg make_msg(int obj, cv::Point2f& sce, float dist)
 {
-	msg m = {0, obj, sce, dist};
+	msg m = {0, 0, obj, sce, dist};
 	return m;
 } 
 

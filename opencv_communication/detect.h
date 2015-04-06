@@ -122,7 +122,7 @@ public:
 			{
 				//-- Get the keypoints from the good matches
 				scene.push_back( keypoints_scene[ local_matches[i].trainIdx ].pt );
-				good_matches.push_back( make_msg(keypoints_object_[ local_matches[i].trainIdx ].pt, 
+				good_matches.push_back( make_msg(local_matches[i].trainIdx, 
 					keypoints_scene[ local_matches[i].trainIdx ].pt,
 					local_matches[i].distance) );
 					
