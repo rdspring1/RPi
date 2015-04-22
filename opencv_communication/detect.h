@@ -18,7 +18,7 @@
 
 using namespace cv;
 
-const int POINTS = 500;
+const int POINTS = 3000;
 const unsigned MAX_MATCH_COUNT = 10;
 const unsigned MIN_MATCH_COUNT = 2;
 const double MAX_THRESHOLD = 10;
@@ -29,8 +29,8 @@ int match_count = 0;
 class detect
 {
 public:
-	detect(ORB& detector, std::vector<KeyPoint>& keypoints_object, Mat& descriptors_object, Mat& img_object)
-	: detector_(detector), keypoints_object_(keypoints_object), descriptors_object_(descriptors_object), img_object_(img_object)
+	detect(FeatureDetector& detector, DescriptorExtractor& extractor, std::vector<KeyPoint>& keypoints_object, Mat& descriptors_object, Mat& img_object)
+	: detector_(detector), extractor_(extractor), keypoints_object_(keypoints_object), descriptors_object_(descriptors_object), img_object_(img_object)
 	{}
 
 	bool processImage(Mat& img_scene, std::vector< msg >& good_matches, std::vector< msg >& neighbor_matches)
@@ -41,7 +41,7 @@ public:
 
 		//-- Step 2: Calculate descriptors (feature vectors)
 		Mat descriptors_scene;
-		detector_.compute( img_scene, keypoints_scene, descriptors_scene );
+		extractor_.compute( img_scene, keypoints_scene, descriptors_scene );
 		descriptors_scene.convertTo(descriptors_scene, CV_32F);
 		if(descriptors_scene.empty())
 		{
@@ -163,7 +163,8 @@ public:
 	}
 
 private:
-	ORB detector_;
+	FeatureDetector& detector_;
+	DescriptorExtractor& extractor_;
 	std::vector<KeyPoint> keypoints_object_;
 	Mat descriptors_object_;
 	Mat img_object_;

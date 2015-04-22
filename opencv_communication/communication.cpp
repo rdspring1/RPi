@@ -91,12 +91,12 @@ int main( int argc, char** argv )
 	// Detection Algorithm
 	std::vector<msg> neighbor_matches;
 	std::vector<msg> good_matches;
-	detect d(detector, keypoints_object, descriptors_object, img_object);
+	detect d(detector, detector, keypoints_object, descriptors_object, img_object);
 	while(true)
 	{
 		Mat img_scene;
 		cap >> img_scene;
-		//cvtColor(img_scene, img_scene, CV_RGB2GRAY, 1);
+		cvtColor(img_scene, img_scene, CV_RGB2GRAY, 1);
 
 		if( !img_scene.data )
 		{ 
