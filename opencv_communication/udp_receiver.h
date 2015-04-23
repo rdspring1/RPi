@@ -1,3 +1,6 @@
+#ifndef UDP_RECEIVER_H
+#define UDP_RECEIVER_H
+
 #include <utility>
 #include <algorithm>
 #include <iostream>
@@ -84,4 +87,4 @@ class udp_receiver
 		boost::mutex mtx_;
 		char data_[sizeof(T)];
 };
-
+#endif /* UDP_RECEIVER_H */

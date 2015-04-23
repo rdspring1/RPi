@@ -1,3 +1,6 @@
+#ifndef FUSION_BASE_H
+#define FUSION_BASE_H
+
 #include "udp_sender.h"
 #include "udp_receiver.h"
 #include "interpreter_base.h"
@@ -29,3 +32,4 @@ class FusionBase : public InterpreterBase
 		boost::thread* asio_send;
 		boost::thread* asio_receiver;
 };
+#endif /* FUSION_BASE_H */

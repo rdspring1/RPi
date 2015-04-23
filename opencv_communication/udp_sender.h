@@ -1,3 +1,6 @@
+#ifndef UDP_SENDER_H
+#define UDP_SENDER_H
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -67,4 +70,4 @@ class udp_sender
 		boost::asio::ip::udp::endpoint endpoint_;
 		unsigned message_count_;
 };
-
+#endif /* UDP_SENDER_H */
