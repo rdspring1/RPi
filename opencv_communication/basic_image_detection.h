@@ -39,9 +39,9 @@ class BasicImageDetection : public InterpreterBase
 			return false;
 		}
 	private:
-		std::list<bool> match_list;
 		const double MAX_THRESHOLD = 10;
 		const double MATCH_THRESHOLD = 1;
+		std::list<bool> match_list;
 		int match_count = 0;
 };
 
