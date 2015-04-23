@@ -1,0 +1,4 @@
+arm-linux-gnueabihf-g++ -std=c++11 ../detect.cpp -L/home/rdspring/opencv-2.4.11/rpi_build/lib -lopencv_highgui -lopencv_core -lopencv_features2d -lopencv_flann -lopencv_imgproc -o detect
+
+~/RPiGit/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-g++ -std=c++11 ../detect.cpp -I/usr/include -L/home/rdspring/opencv-2.4.11/rpi_build/lib -lopencv_highgui -lopencv_core -lopencv_features2d -lopencv_flann -lopencv_imgproc -lpthread -o detect
+
