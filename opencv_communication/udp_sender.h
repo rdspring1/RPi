@@ -32,6 +32,13 @@ class udp_sender
 			}
 		}
 
+		void async_send_msg(T msg)
+		{
+			socket_.async_send_to(boost::asio::buffer(&msg, sizeof(msg)), endpoint_, 
+					boost::bind(&udp_sender::handle_send_to, this, boost::asio::placeholders::error));
+			++message_count_;
+		}
+
 		void async_send_msg(void* data, size_t size)
 		{
 			socket_.async_send_to(boost::asio::buffer(data, size), endpoint_, 

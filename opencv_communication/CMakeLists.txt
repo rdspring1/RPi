@@ -13,9 +13,9 @@ find_package( OpenCV REQUIRED )
 include_directories (${Boost_INCLUDE_DIRS})
 include_directories (${CMAKE_SOURCE_DIR})
 
-add_executable(opencv_communication communication.cpp)
+add_executable(rpi_fusion manager.cpp)
 
-target_link_libraries (opencv_communication
+target_link_libraries (rpi_fusion
 	${Boost_SYSTEM_LIBRARY}
 	${Boost_THREAD_LIBRARY}
 	${OpenCV_LIBS}
