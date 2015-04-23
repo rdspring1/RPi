@@ -44,12 +44,16 @@ class ImageSharing : public FusionBase<image_msg>
 			}
 
 			// convert image into image_msg
-			std::vector<unsigned char> outImg;
-			cv::imencode(PNG, img_scene, outImg);
-			std::cout << "Image Size: " << outImg.size() << std::endl;
+			if(!(image_count_ % MSG_RATE))
+			{
+				std::vector<unsigned char> outImg;
+				cv::imencode(PNG, img_scene, outImg);
+				//std::cout << "Image Size: " << sizeof(img_scene.data) * img_scene.rows * img_scene.cols << std::endl;
+				//std::cout << "Compressed Image Size: " << outImg.size() << std::endl;
 
-			// send image to neighbors
-			sender->async_send_msg(make_msg(img_scene.type(), img_scene.rows, img_scene.cols, outImg.size(), &outImg.front()));
+				// send image to neighbors
+				sender->async_send_msg(make_msg(img_scene.type(), img_scene.rows, img_scene.cols, outImg.size(), &outImg.front()));
+			}
 
 			// Update Bayesian Probability Measure
 			// If greater than a certain level of probability, return true
@@ -58,8 +62,11 @@ class ImageSharing : public FusionBase<image_msg>
 			return (belief >= THRESHOLD);
 		}
 	private:
+		const unsigned MSG_RATE = 10;
+		unsigned image_count_ = 0;
 		const double THRESHOLD = 0.7;
 		double belief = 0.5;
+
 		image_msg make_msg(int t, int r, int c, size_t size, unsigned char* buf)
 		{
 			image_msg m = {0, 0, t, r, c, size, buf};

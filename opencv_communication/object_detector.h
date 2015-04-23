@@ -96,22 +96,24 @@ class ObjectDetector
 					good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
 					vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
 
-			std::vector<Point2f> scene;
-			for( unsigned i = 0; i < good_matches.size(); ++i )
+			if(good_matches.size() > MIN_CONVEX_HULL)
 			{
-				//-- Get the keypoints from the good matches
-				scene.push_back( keypoints_scene[ good_matches[i].trainIdx ].pt );
+				std::vector<Point2f> scene;
+				for( unsigned i = 0; i < good_matches.size(); ++i )
+				{
+					//-- Get the keypoints from the good matches
+					scene.push_back( keypoints_scene[ good_matches[i].trainIdx ].pt );
+				}
+
+				std::vector<Point2f> hull;
+				convexHull(scene, hull);
+
+				for(unsigned i = 0; i < hull.size()-1; ++i)
+				{
+					line( img_matches, hull[i] + Point2f( img_object_.cols, 0), hull[i+1] + Point2f( img_object_.cols, 0), Scalar(0, 255, 0), 4 );
+				}
+				line( img_matches, hull[hull.size()-1] + Point2f( img_object_.cols, 0), hull[0] + Point2f( img_object_.cols, 0), Scalar(0, 255, 0), 4 );
 			}
-
-			std::vector<Point2f> hull;
-			convexHull(scene, hull);
-
-			for(unsigned i = 0; i < hull.size()-1; ++i)
-			{
-				line( img_matches, hull[i] + Point2f( img_object_.cols, 0), hull[i+1] + Point2f( img_object_.cols, 0), Scalar(0, 255, 0), 4 );
-			}
-			line( img_matches, hull[hull.size()-1] + Point2f( img_object_.cols, 0), hull[0] + Point2f( img_object_.cols, 0), Scalar(0, 255, 0), 4 );
-
 			//-- Show detected matches
 			imshow( "Camera", img_matches );
 			/* Visual Debug Information - End */
@@ -125,6 +127,7 @@ class ObjectDetector
 		}
 
 	private:
+		const unsigned MIN_CONVEX_HULL = 3;
 		const unsigned MAX_MATCH_COUNT = 10;
 		const unsigned MIN_MATCH_COUNT = 2;
 

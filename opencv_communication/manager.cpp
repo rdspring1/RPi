@@ -58,8 +58,8 @@ int main( int argc, char** argv )
 	ObjectDetector d(detector, extractor, keypoints_object, descriptors_object, img_object);
 
 	// Information Fusion Algorithm
-	BasicImageDetection* ib = new BasicImageDetection(d);
-	//ImageSharing* ib = new ImageSharing(d, argv[2]);
+	//BasicImageDetection* ib = new BasicImageDetection(d);
+	ImageSharing* ib = new ImageSharing(d, argv[2]);
 
 	while(true)
 	{
