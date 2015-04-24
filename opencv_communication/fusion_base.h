@@ -13,7 +13,7 @@ template<class T>
 class FusionBase : public InterpreterBase
 {
 	public:
-		FusionBase(ObjectDetector& d, string ip_address) : InterpreterBase(d)
+		FusionBase(ObjectDetector& d, string ip_address) : InterpreterBase(d), work_send(ios_send), work_recv(ios_send)
 	{
 		// Setup Bi-Direction Communication
 		receiver = new udp_receiver<T>(ios_receive, port);
@@ -29,6 +29,8 @@ class FusionBase : public InterpreterBase
 	private:
 		boost::asio::io_service ios_send;
 		boost::asio::io_service ios_receive;
+		boost::asio::io_service::work work_send;
+		boost::asio::io_service::work work_recv;
 		boost::thread* asio_send;
 		boost::thread* asio_receiver;
 };

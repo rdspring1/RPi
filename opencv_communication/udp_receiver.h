@@ -47,32 +47,35 @@ class udp_receiver
 		{
 			if (!error)
 			{
-				std::cout << "Message Received: " << bytes_recvd << " " << sizeof(T) << std::endl;
+				std::cout << "Message Received: " << bytes_recvd << " Header: " << sizeof(T) << std::endl;
 				if(bytes_recvd >= sizeof(T))
 				{
 					// lock
 					mtx_.lock();
-					
+
 					++last_message_id;
 
 					// cast buffer to template type T
 					T* data = reinterpret_cast<T*>(header_);
-					std::cout << "Message Buffer: " << bytes_recvd << " " << sizeof(T) << " " << data->size << std::endl;
-					if((data->size > 0) && (bytes_recvd == (sizeof(T) + data->size)))
+					std::cout << "Message Body: " << bytes_recvd << " Header: " << sizeof(T) << " Body: " << data->size << std::endl;
+					if(bytes_recvd == (sizeof(T) + data->size))
 					{
-						data->buffer = (unsigned char*) malloc(data->size);
-						memcpy(data->buffer, body_, data->size);
-					}
-					//std::cout << "Message Received - Successfully" << std::endl;
+						if(data->size > 0)
+						{
+							data->buffer = (unsigned char*) malloc(data->size);
+							memcpy(data->buffer, body_, data->size);
+						}
+						//std::cout << "Message Received - Successfully" << std::endl;
 
-					if(data->message_id != last_message_id)
-					{
-						last_message_id = data->message_id;
-						++lost_message_count;
-					}
+						if(data->message_id != last_message_id)
+						{
+							last_message_id = data->message_id;
+							++lost_message_count;
+						}
 
-					// add new msg to stored data
-					stored_data.push_back(*data);
+						// add new msg to stored data
+						stored_data.push_back(*data);
+					}
 
 					// release
 					mtx_.unlock();

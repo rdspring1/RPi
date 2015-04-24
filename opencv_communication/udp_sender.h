@@ -35,22 +35,26 @@ class udp_sender
 
 		void async_send_msg(T&& header, std::vector<unsigned char>& body)
 		{
-			std::cout << "Send Message: " << (sizeof(T) + body.size()) << std::endl;
 			std::vector<boost::asio::const_buffer> buffer;
 			buffer.push_back(boost::asio::buffer(&header, sizeof(T)));
 			buffer.push_back(boost::asio::buffer(body));
 			socket_.async_send_to(buffer, endpoint_, 
-					boost::bind(&udp_sender::handle_send_to, this, boost::asio::placeholders::error));
+					boost::bind(&udp_sender::handle_send_to, this, 
+					boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 			++message_count_;
 		}
 
 	private:
 
-		void handle_send_to(const boost::system::error_code& error)
+		void handle_send_to(const boost::system::error_code& error, size_t bytes_transferred)
 		{
 			if (error)
 			{
 				std::cout << "Failed to send message: " << error << std::endl;
+			}
+			else
+			{
+				std::cout << "Send Message: " << bytes_transferred << std::endl;
 			}
 		}
 

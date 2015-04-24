@@ -33,7 +33,7 @@ class ImageSharing : public FusionBase<image_msg>
 
 			std::vector<image_msg> neighbor_msgs;
 			receiver->async_receive_msgs(neighbor_msgs);
-			std::cout << "after: " << neighbor_msgs.size() << std::endl;
+			//std::cout << "msgs received: " << neighbor_msgs.size() << std::endl;
 			for(image_msg& img : neighbor_msgs)
 			{
 				// Convert image_msg back into image
