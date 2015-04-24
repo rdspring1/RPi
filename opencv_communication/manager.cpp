@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <exception>
 
 const int POINTS = 3000;
 const int WIDTH = 320;
@@ -73,7 +74,14 @@ int main( int argc, char** argv )
 			return -1; 
 		}
 
-		ib->detect(img_scene);
+		try
+		{
+			ib->detect(img_scene);
+		}
+		catch (std::exception ex)
+		{
+			std::cout << ex.what() << std::endl;
+		}
 
 		if(waitKey(50) >= 0)
 		{

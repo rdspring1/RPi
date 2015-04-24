@@ -4,6 +4,8 @@
 #include "fusion_base.h"
 #include "image_formats.h"
 
+#include <stdio.h>
+
 #include <opencv2/opencv.hpp>
 
 struct image_msg
@@ -13,8 +15,8 @@ struct image_msg
 	int type;
 	int rows;
 	int cols;
-	size_t size;
-	unsigned char* image_buffer;
+	unsigned size;
+	unsigned char* buffer;
 }; 
 
 class ImageSharing : public FusionBase<image_msg>
@@ -31,11 +33,13 @@ class ImageSharing : public FusionBase<image_msg>
 
 			std::vector<image_msg> neighbor_msgs;
 			receiver->async_receive_msgs(neighbor_msgs);
+			std::cout << "after: " << neighbor_msgs.size() << std::endl;
 			for(image_msg& img : neighbor_msgs)
 			{
 				// Convert image_msg back into image
-				cv::Mat img_buf = cv::Mat(img.rows, img.cols, img.type, img.image_buffer);
+				cv::Mat img_buf = cv::Mat(img.rows, img.cols, img.type, img.buffer);
 				cv::Mat neighbor_image = cv::imdecode(img_buf, CV_LOAD_IMAGE_COLOR);
+				imshow( "Neighbor", neighbor_image );
 
 				// Process neighbor image
 				// Increment found counter if object is successfully detected
@@ -52,7 +56,7 @@ class ImageSharing : public FusionBase<image_msg>
 				//std::cout << "Compressed Image Size: " << outImg.size() << std::endl;
 
 				// send image to neighbors
-				sender->async_send_msg(make_msg(img_scene.type(), img_scene.rows, img_scene.cols, outImg.size(), &outImg.front()));
+				sender->async_send_msg(make_msg(img_scene.type(), img_scene.rows, img_scene.cols, outImg.size()), outImg);
 			}
 
 			// Update Bayesian Probability Measure
@@ -67,9 +71,9 @@ class ImageSharing : public FusionBase<image_msg>
 		const double THRESHOLD = 0.7;
 		double belief = 0.5;
 
-		image_msg make_msg(int t, int r, int c, size_t size, unsigned char* buf)
+		image_msg make_msg(int t, int r, int c, unsigned size)
 		{
-			image_msg m = {0, 0, t, r, c, size, buf};
+			image_msg m = {0, 0, t, r, c, size, NULL};
 			return m;
 		} 
 };

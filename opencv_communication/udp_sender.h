@@ -26,25 +26,20 @@ class udp_sender
 			return message_count_;
 		}
 
-		void async_send_msgs(std::vector<T> msgs)
-		{
-			for(T msg : msgs)
-			{
-				msg.message_id = message_count_;
-				async_send_msg(&msg, sizeof(msg));
-			}
-		}
-
-		void async_send_msg(T msg)
+		void async_send_msg(T& msg)
 		{
 			socket_.async_send_to(boost::asio::buffer(&msg, sizeof(msg)), endpoint_, 
 					boost::bind(&udp_sender::handle_send_to, this, boost::asio::placeholders::error));
 			++message_count_;
 		}
 
-		void async_send_msg(void* data, size_t size)
+		void async_send_msg(T&& header, std::vector<unsigned char>& body)
 		{
-			socket_.async_send_to(boost::asio::buffer(data, size), endpoint_, 
+			std::cout << "Send Message: " << (sizeof(T) + body.size()) << std::endl;
+			std::vector<boost::asio::const_buffer> buffer;
+			buffer.push_back(boost::asio::buffer(&header, sizeof(T)));
+			buffer.push_back(boost::asio::buffer(body));
+			socket_.async_send_to(buffer, endpoint_, 
 					boost::bind(&udp_sender::handle_send_to, this, boost::asio::placeholders::error));
 			++message_count_;
 		}
