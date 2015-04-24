@@ -56,7 +56,7 @@ class ImageSharing : public FusionBase<image_msg>
 				//std::cout << "Compressed Image Size: " << outImg.size() << std::endl;
 
 				// send image to neighbors
-				sender->async_send_msg(make_msg(img_scene.type(), img_scene.rows, img_scene.cols, outImg.size()), outImg);
+				sender->async_send_msg(make_msg(img_scene.type(), img_scene.rows, img_scene.cols, outImg.size()));
 			}
 
 			// Update Bayesian Probability Measure

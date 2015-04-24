@@ -9,10 +9,10 @@
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 
 template<class T>
-class udp_sender
+class UdpSender
 {
 	public:
-		udp_sender(boost::asio::io_service& io_service, const boost::asio::ip::address& address, unsigned short port)
+		UdpSender(boost::asio::io_service& io_service, const boost::asio::ip::address& address, unsigned short port)
 			: socket_(io_service, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port+1)),
 			endpoint_(address, port),
 			message_count_(0)
@@ -26,21 +26,10 @@ class udp_sender
 			return message_count_;
 		}
 
-		void async_send_msg(T& msg)
+		void async_send_msg(T&& msg)
 		{
 			socket_.async_send_to(boost::asio::buffer(&msg, sizeof(msg)), endpoint_, 
-					boost::bind(&udp_sender::handle_send_to, this, boost::asio::placeholders::error));
-			++message_count_;
-		}
-
-		void async_send_msg(T&& header, std::vector<unsigned char>& body)
-		{
-			std::cout << "Send Message: " << (sizeof(T) + body.size()) << std::endl;
-			std::vector<boost::asio::const_buffer> buffer;
-			buffer.push_back(boost::asio::buffer(&header, sizeof(T)));
-			buffer.push_back(boost::asio::buffer(body));
-			socket_.async_send_to(buffer, endpoint_, 
-					boost::bind(&udp_sender::handle_send_to, this, boost::asio::placeholders::error));
+					boost::bind(&UdpSender::handle_send_to, this, boost::asio::placeholders::error));
 			++message_count_;
 		}
 
@@ -54,7 +43,7 @@ class udp_sender
 			}
 		}
 
-		~udp_sender()
+		~UdpSender()
 		{
 			boost::system::error_code error;
 			socket_.close(error);
