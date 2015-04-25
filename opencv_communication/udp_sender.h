@@ -52,10 +52,7 @@ class udp_sender
 			{
 				std::cout << "Failed to send message: " << error << std::endl;
 			}
-			else
-			{
-				std::cout << "Send Message: " << bytes_transferred << std::endl;
-			}
+			//std::cout << "Send Message: " << bytes_transferred << std::endl;
 		}
 
 		~udp_sender()

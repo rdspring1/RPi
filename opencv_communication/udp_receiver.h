@@ -47,7 +47,7 @@ class udp_receiver
 		{
 			if (!error)
 			{
-				std::cout << "Message Received: " << bytes_recvd << " Header: " << sizeof(T) << std::endl;
+				//std::cout << "Initial: " << bytes_recvd << " Header: " << sizeof(T) << std::endl;
 				if(bytes_recvd >= sizeof(T))
 				{
 					// lock
@@ -57,7 +57,7 @@ class udp_receiver
 
 					// cast buffer to template type T
 					T* data = reinterpret_cast<T*>(header_);
-					std::cout << "Message Body: " << bytes_recvd << " Header: " << sizeof(T) << " Body: " << data->size << std::endl;
+					//std::cout << "Complete: " << bytes_recvd << " Header: " << sizeof(T) << " Body: " << data->size << std::endl;
 					if(bytes_recvd == (sizeof(T) + data->size))
 					{
 						if(data->size > 0)
@@ -98,11 +98,10 @@ class udp_receiver
 		std::vector<T> stored_data;
 		boost::mutex mtx_;
 
-		const unsigned BODY_SIZE = 66560; // 65 KB buffer
+		const static unsigned BODY_SIZE = 66560; // 65 KB buffer
 		const static unsigned BUFFER_SIZE = 2;
 		char header_[sizeof(T)];
-		char body_[sizeof(BODY_SIZE)];
-
+		char body_[BODY_SIZE];
 		std::array<boost::asio::mutable_buffer, BUFFER_SIZE> data_;
 };
 #endif /* UDP_RECEIVER_H */
