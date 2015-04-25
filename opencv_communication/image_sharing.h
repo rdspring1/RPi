@@ -4,6 +4,7 @@
 #include "fusion_base.h"
 #include "image_formats.h"
 
+#include <utility>
 #include <stdio.h>
 
 #include <opencv2/opencv.hpp>
@@ -16,7 +17,6 @@ struct image_msg
 	int rows;
 	int cols;
 	unsigned size;
-	unsigned char* buffer;
 }; 
 
 class ImageSharing : public FusionBase<image_msg>
@@ -31,15 +31,18 @@ class ImageSharing : public FusionBase<image_msg>
 			std::vector< DMatch > local_matches;
 			found += (int) processImage(img_scene, local_matches);
 
-			std::vector<image_msg> neighbor_msgs;
+			std::vector< std::pair<image_msg, unsigned char*> > neighbor_msgs;
 			receiver->async_receive_msgs(neighbor_msgs);
 			//std::cout << "msgs received: " << neighbor_msgs.size() << std::endl;
-			for(image_msg& img : neighbor_msgs)
+			for(std::pair<image_msg, unsigned char*>& img : neighbor_msgs)
 			{
 				// Convert image_msg back into image
-				cv::Mat img_buf = cv::Mat(img.rows, img.cols, img.type, img.buffer);
-				cv::Mat neighbor_image = cv::imdecode(img_buf, CV_LOAD_IMAGE_COLOR);
-				imshow( "Neighbor", neighbor_image );
+				cv::Mat img_buf = cv::Mat(img.first.rows, img.first.cols, img.first.type, img.second);
+				cv::Mat neighbor_image = cv::imdecode(img_buf, CV_LOAD_IMAGE_GRAYSCALE);
+				if(!neighbor_image.empty())
+				{
+					imshow( "Neighbor", neighbor_image );
+				}
 
 				// Process neighbor image
 				// Increment found counter if object is successfully detected
@@ -73,7 +76,7 @@ class ImageSharing : public FusionBase<image_msg>
 
 		image_msg make_msg(int t, int r, int c, unsigned size)
 		{
-			image_msg m = {0, 0, t, r, c, size, NULL};
+			image_msg m = {0, 0, t, r, c, size};
 			return m;
 		} 
 };

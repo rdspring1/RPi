@@ -27,7 +27,7 @@ class udp_receiver
 						boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 		}
 
-		void async_receive_msgs(std::vector<T>& data)
+		void async_receive_msgs(std::vector< std::pair<T, unsigned char*> >& data)
 		{
 			// lock
 			mtx_.lock();
@@ -47,7 +47,7 @@ class udp_receiver
 		{
 			if (!error)
 			{
-				//std::cout << "Initial: " << bytes_recvd << " Header: " << sizeof(T) << std::endl;
+				std::cout << "Initial: " << bytes_recvd << " Header: " << sizeof(T) << std::endl;
 				if(bytes_recvd >= sizeof(T))
 				{
 					// lock
@@ -57,13 +57,16 @@ class udp_receiver
 
 					// cast buffer to template type T
 					T* data = reinterpret_cast<T*>(header_);
-					//std::cout << "Complete: " << bytes_recvd << " Header: " << sizeof(T) << " Body: " << data->size << std::endl;
-					if(bytes_recvd == (sizeof(T) + data->size))
+					std::cout << "Complete: " << bytes_recvd << " Header: " << sizeof(T) << " Body: " << data->size << std::endl;
+					if(bytes_recvd > data->size)
 					{
+						// add new msg to stored data
+						stored_data.push_back(std::make_pair(*data, (unsigned char*) NULL));
+
 						if(data->size > 0)
 						{
-							data->buffer = (unsigned char*) malloc(data->size);
-							memcpy(data->buffer, body_, data->size);
+							stored_data.back().second = (unsigned char*) malloc(data->size);
+							memcpy(stored_data.back().second, body_, data->size);
 						}
 						//std::cout << "Message Received - Successfully" << std::endl;
 
@@ -72,9 +75,6 @@ class udp_receiver
 							last_message_id = data->message_id;
 							++lost_message_count;
 						}
-
-						// add new msg to stored data
-						stored_data.push_back(*data);
 					}
 
 					// release
@@ -95,7 +95,7 @@ class udp_receiver
 		boost::asio::ip::udp::endpoint sender_endpoint_;
 		unsigned last_message_id = 0;
 		unsigned lost_message_count = 0;
-		std::vector<T> stored_data;
+		std::vector< std::pair<T, unsigned char*> > stored_data;
 		boost::mutex mtx_;
 
 		const static unsigned BODY_SIZE = 66560; // 65 KB buffer
