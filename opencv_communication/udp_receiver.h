@@ -1,33 +1,36 @@
 #ifndef UDP_RECEIVER_H
 #define UDP_RECEIVER_H
 
+#include <list>
+#include <vector>
 #include <utility>
 #include <algorithm>
 #include <iostream>
 #include <string>
+
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+#include <boost/function.hpp>
 #include <boost/thread/mutex.hpp>
 
-template<class T>
+
+template<typename T>
 class udp_receiver
 {
 	public:
-		udp_receiver(boost::asio::io_service& io_service, unsigned short port) 
-			: socket_(io_service, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port))
+		typedef boost::function<void (std::vector<boost::asio::mutable_buffer>&)> create_buffer_fptr;
+
+		udp_receiver(boost::asio::io_service& io_service, unsigned short port, create_buffer_fptr create_buffer) 
+			: socket_(io_service, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port)), create_buffer_(create_buffer)
 		{
-			data_.front() = boost::asio::buffer(header_);
-			data_.back() = boost::asio::buffer(body_);
-
-			// Create the socket so that multiple may be bound to the same address.
+			create_buffer_(data_);
 			socket_.set_option(boost::asio::ip::udp::socket::reuse_address(true));
-
 			socket_.async_receive_from(data_, sender_endpoint_,
 					boost::bind(&udp_receiver::handle_receive_from, this, 
 						boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 		}
 
-		void async_receive_msgs(std::vector< std::pair<T, unsigned char*> >& data)
+		void async_receive_msgs(std::list< std::vector<boost::asio::mutable_buffer> >& data)
 		{
 			// lock
 			mtx_.lock();
@@ -56,23 +59,19 @@ class udp_receiver
 					++last_message_id;
 
 					// cast buffer to template type T
-					T* data = reinterpret_cast<T*>(header_);
-					//std::cout << "Complete: " << bytes_recvd << " Header: " << sizeof(T) << " Body: " << data->size << std::endl;
-					if(bytes_recvd == (sizeof(T) + data->size))
+					T* header = boost::asio::buffer_cast<T*>(data_.front());
+					//std::cout << "Complete: " << bytes_recvd << " Header: " << sizeof(T) << " Body: " << header->size << std::endl;
+					if(bytes_recvd == header->size)
 					{
 						// add new msg to stored data
-						stored_data.push_back(std::make_pair(*data, (unsigned char*) NULL));
+						std::vector<boost::asio::mutable_buffer> new_data;
+						create_buffer_(new_data);
+						std::swap(data_, new_data);
+						stored_data.push_back(std::move(new_data));
 
-						if(data->size > 0)
+						if(header->message_id != last_message_id)
 						{
-							stored_data.back().second = (unsigned char*) malloc(data->size);
-							memcpy(stored_data.back().second, body_, data->size);
-						}
-						//std::cout << "Message Received - Successfully" << std::endl;
-
-						if(data->message_id != last_message_id)
-						{
-							last_message_id = data->message_id;
+							last_message_id = header->message_id;
 							++lost_message_count;
 						}
 					}
@@ -95,13 +94,9 @@ class udp_receiver
 		boost::asio::ip::udp::endpoint sender_endpoint_;
 		unsigned last_message_id = 0;
 		unsigned lost_message_count = 0;
-		std::vector< std::pair<T, unsigned char*> > stored_data;
+		std::list< std::vector<boost::asio::mutable_buffer> > stored_data;
+		std::vector<boost::asio::mutable_buffer> data_;
 		boost::mutex mtx_;
-
-		const static unsigned BODY_SIZE = 66560; // 65 KB buffer
-		const static unsigned BUFFER_SIZE = 2;
-		char header_[sizeof(T)];
-		char body_[BODY_SIZE];
-		std::array<boost::asio::mutable_buffer, BUFFER_SIZE> data_;
+		create_buffer_fptr create_buffer_;
 };
 #endif /* UDP_RECEIVER_H */
