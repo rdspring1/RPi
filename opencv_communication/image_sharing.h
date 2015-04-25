@@ -61,6 +61,7 @@ class ImageSharing : public FusionBase<image_msg>
 				// send image to neighbors
 				sender->async_send_msg(make_msg(img_scene.type(), img_scene.rows, img_scene.cols, outImg.size()), outImg);
 			}
+			++image_count_;
 
 			// Update Bayesian Probability Measure
 			// If greater than a certain level of probability, return true
@@ -69,7 +70,7 @@ class ImageSharing : public FusionBase<image_msg>
 			return (belief >= THRESHOLD);
 		}
 	private:
-		const unsigned MSG_RATE = 10;
+		const unsigned MSG_RATE = 20;
 		unsigned image_count_ = 0;
 		const double THRESHOLD = 0.7;
 		double belief = 0.5;
