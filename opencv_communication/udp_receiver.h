@@ -13,7 +13,6 @@
 #include <boost/function.hpp>
 #include <boost/thread/mutex.hpp>
 
-
 template<typename T>
 class udp_receiver
 {

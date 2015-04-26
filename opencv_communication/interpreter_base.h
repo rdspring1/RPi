@@ -20,7 +20,7 @@ class InterpreterBase
 			return d_.lib_.image_names.size();
 		}
 
-		ObjectLibrary& object_library()
+		const ObjectLibrary& object_library() const
 		{
 			return d_.lib_;
 		}

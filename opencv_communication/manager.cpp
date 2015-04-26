@@ -1,4 +1,5 @@
 #include "object_library.h"
+#include "fps_avg.h"
 
 #include "basic_image_detection.h"
 #include "image_sharing.h"
@@ -46,6 +47,7 @@ int main( int argc, char** argv )
 	ImageSharing* ib = new ImageSharing(d, argv[2]);
 	//ProbObject* ib = new ProbObject(d, argv[2]);
 
+	FpsAvg fps(5);
 	while(true)
 	{
 		Mat img_scene;
@@ -61,6 +63,7 @@ int main( int argc, char** argv )
 		try
 		{
 			ib->detect(img_scene);
+			fps.update();
 		}
 		catch (std::exception ex)
 		{
