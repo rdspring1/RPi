@@ -1,5 +1,6 @@
 #include "basic_image_detection.h"
 #include "image_sharing.h"
+#include "prob_object.h"
 
 #include <iostream>
 #include <string>
@@ -15,7 +16,7 @@ int main( int argc, char** argv )
 	// Collect Arguments
 	if( argc != 3 )
 	{ 
-		std::cout << " Usage: ./opencv_communication <object> <ip_address>" << std::endl; 
+		std::cout << " Usage: ./opencv_communication <object_folder> <ip_address>" << std::endl; 
 		return -1; 
 	}
 
@@ -60,7 +61,8 @@ int main( int argc, char** argv )
 
 	// Information Fusion Algorithm
 	//BasicImageDetection* ib = new BasicImageDetection(d);
-	ImageSharing* ib = new ImageSharing(d, argv[2]);
+	//ImageSharing* ib = new ImageSharing(d, argv[2]);
+	ProbObject* ib = new ProbObject(d, argv[2]);
 
 	while(true)
 	{
