@@ -8,11 +8,36 @@ class InterpreterBase
 	public:
 		InterpreterBase(ObjectDetector& d) : d_(d) {}
 
-		virtual bool detect(Mat& img_scene) = 0;
+		virtual std::vector<bool> detect(Mat& img_scene) = 0;
 
-		bool processImage(Mat& img_scene, std::vector< DMatch >& good_matches)
+		unsigned num_objects() const
 		{
-			return d_.processImage(img_scene, good_matches);
+			return d_.lib_.object_idx.size();
+		}
+
+		unsigned num_images() const
+		{
+			return d_.lib_.image_names.size();
+		}
+
+		ObjectLibrary& object_library()
+		{
+			return d_.lib_;
+		}
+
+		bool processObject(unsigned idx, std::vector< DMatch >& good_matches)
+		{
+			return d_.processObject(idx, good_matches);
+		}
+
+		void processScene(cv::Mat img_scene)
+		{
+			d_.processScene(img_scene);
+		}
+
+		void debugImage(unsigned idx, std::vector< DMatch >& good_matches)
+		{
+			d_.debugImage(idx, good_matches);
 		}
 	private:
 		ObjectDetector& d_;

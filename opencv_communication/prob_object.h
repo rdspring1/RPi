@@ -23,16 +23,22 @@ class ProbObject : public FusionBase<pobj_msg>
 {
 	public:
 		ProbObject(ObjectDetector& d, string ip_address) 
-			: FusionBase<pobj_msg>(d, ip_address, create_buffer_fptr(boost::bind(&ProbObject::create_buffer, _1 ))) {}
+			: FusionBase<pobj_msg>(d, ip_address, create_buffer_fptr(boost::bind(&ProbObject::create_buffer, _1 ))),
+			  belief(num_objects(), 0.5) {}
 
-		virtual bool detect(Mat& img_scene)
+		virtual std::vector<bool> detect(Mat& img_scene)
 		{
 			// # of times the object is detected
-			int found = 0;
+			processScene(img_scene);
+			std::vector<int> found(num_objects(), 0);
+			std::vector<unsigned char> out(num_objects());
 
-			std::vector< DMatch > local_matches;
-			bool success = processImage(img_scene, local_matches);
-			found += (int) success;
+			for(unsigned idx = 0; idx < num_objects(); ++idx)
+			{
+				std::vector< DMatch > local_matches;
+				out[idx] = (unsigned char) processObject(object_library().object_idx[idx], local_matches);
+				found[idx] = (int) out[idx];
+			}
 
 			std::list< std::vector<boost::asio::mutable_buffer> > neighbor_msgs;
 			receiver->async_receive_msgs(neighbor_msgs);
@@ -45,15 +51,13 @@ class ProbObject : public FusionBase<pobj_msg>
 				// Process neighbor message
 				for(unsigned idx = 0; idx < header->num_objects; ++idx)
 				{
-					found += (int) body[idx];
+					found[idx] += (int) body[idx];
 				}
 			}
 
 			// convert image into pobj_msg
 			if(!(image_count_ % MSG_RATE))
 			{
-				std::vector<unsigned char> out;
-				out.push_back( (unsigned char) success);
 				// send image to neighbors
 				sender->async_send_msg(make_msg(out));
 			}
@@ -62,8 +66,13 @@ class ProbObject : public FusionBase<pobj_msg>
 			// Update Bayesian Probability Measure
 			// If greater than a certain level of probability, return true
 			// Model distribution - Binomial / Bernoulli 
-			belief *= (found / (neighbor_msgs.size() + 1));
-			return (belief >= THRESHOLD);
+			std::vector<bool> results(num_objects());
+			for(unsigned idx = 0; idx < belief.size(); ++idx)
+			{
+				belief[idx] *= (found[idx] / (neighbor_msgs.size() + 1));
+				results[idx] = (belief[idx] >= THRESHOLD);
+			}
+			return results;
 		}
 
 		static void create_buffer(std::vector<boost::asio::mutable_buffer>& data)
@@ -76,7 +85,7 @@ class ProbObject : public FusionBase<pobj_msg>
 		const static unsigned BODY_SIZE = 2; // Number of objects
 		const unsigned MSG_RATE = 5;
 		const double THRESHOLD = 0.7;
-		double belief = 0.5;
+		std::vector<double> belief;
 		unsigned image_count_ = 0;
 
 		std::vector<boost::asio::const_buffer> make_msg(std::vector<unsigned char>& objects)

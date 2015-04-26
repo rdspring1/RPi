@@ -10,10 +10,12 @@ class BasicImageDetection : public InterpreterBase
 	public:
 		BasicImageDetection(ObjectDetector& d) : InterpreterBase(d), match_list(MAX_THRESHOLD, false) {}
 
-		virtual bool detect(Mat& img_scene)
+		virtual std::vector<bool> detect(Mat& img_scene)
 		{
+			processScene(img_scene);
 			std::vector< DMatch > local_matches;
-			bool success = processImage(img_scene, local_matches);
+			bool success = processObject(0, local_matches);
+			debugImage(0, local_matches);
 
 			// Determine if object is detected
 			if(match_list.front())
@@ -32,11 +34,11 @@ class BasicImageDetection : public InterpreterBase
 			if(match_count >= MATCH_THRESHOLD)
 			{	
 				std::cout << "MATCH DETECTED: " << match_count << std::endl;
-				return true;
+				return std::vector<bool>(1, true);
 			}
 
 			std::cout << "NO MATCH DETECTED: " << match_count << std::endl;
-			return false;
+			return std::vector<bool>(1, false);
 		}
 	private:
 		const double MAX_THRESHOLD = 10;

@@ -1,6 +1,8 @@
 #ifndef OBJECT_DETECTOR_H
 #define OBJECT_DETECTOR_H
 
+#include "object_library.h"
+
 // STL
 #include <stdio.h>
 #include <iostream>
@@ -21,29 +23,74 @@ using namespace cv;
 class ObjectDetector
 {
 	public:
-		ObjectDetector(FeatureDetector& detector, DescriptorExtractor& extractor, std::vector<KeyPoint>& keypoints_object, Mat& descriptors_object, Mat& img_object)
-			: detector_(detector), extractor_(extractor), keypoints_object_(keypoints_object), descriptors_object_(descriptors_object), img_object_(img_object)
+		ObjectDetector(FeatureDetector& detector, DescriptorExtractor& extractor, ObjectLibrary& lib)
+			: lib_(lib), detector_(detector), extractor_(extractor) 
 		{}
 
-		bool processImage(Mat& img_scene, std::vector< DMatch >& good_matches)
+		void processScene(Mat& img_scene)
 		{
+			//-- Step 0: Store scene image
+			img_scene_ = img_scene;
+
 			//-- Step 1: Detect the keypoints using ORB Detector
-			std::vector<KeyPoint> keypoints_scene;
-			detector_.detect( img_scene, keypoints_scene );
+			keypoints_scene_.clear();
+			detector_.detect( img_scene, keypoints_scene_ );
 
 			//-- Step 2: Calculate descriptors (feature vectors)
-			Mat descriptors_scene;
-			extractor_.compute( img_scene, keypoints_scene, descriptors_scene );
-			descriptors_scene.convertTo(descriptors_scene, CV_32F);
-			if(descriptors_scene.empty())
+			descriptors_scene_.release();
+			extractor_.compute( img_scene, keypoints_scene_, descriptors_scene_ );
+			descriptors_scene_.convertTo(descriptors_scene_, CV_32F);
+		}
+
+		void debugImage(unsigned object_idx, std::vector<DMatch>& good_matches)
+		{
+			Mat& img_object = lib_.images[object_idx];
+			std::vector<KeyPoint>& keypoints_object = lib_.keypoints_objects[object_idx];
+
+			/* Visual Debug Information - Start */
+			// Draw matches between object and scene
+			Mat img_matches;
+			drawMatches( img_object, keypoints_object, img_scene_, keypoints_scene_,
+					good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
+					vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+
+			if(good_matches.size() > MIN_CONVEX_HULL)
 			{
-				imshow( "Camera", img_scene );
+				std::vector<Point2f> scene;
+				for( unsigned i = 0; i < good_matches.size(); ++i )
+				{
+					//-- Get the keypoints from the good matches
+					scene.push_back( keypoints_scene_[ good_matches[i].trainIdx ].pt );
+				}
+
+				std::vector<Point2f> hull;
+				convexHull(scene, hull);
+
+				for(unsigned i = 0; i < hull.size()-1; ++i)
+				{
+					line( img_matches, 
+							hull[i] + Point2f( img_object.cols, 0), 
+							hull[i+1] + Point2f( img_object.cols, 0), 
+							Scalar(0, 255, 0), 4 );
+				}
+				line( img_matches, 
+						hull[hull.size()-1] + Point2f( img_object.cols, 0), 
+						hull[0] + Point2f( img_object.cols, 0), 
+						Scalar(0, 255, 0), 4 );
 			}
+			//-- Show detected matches
+			imshow( "object" + object_idx, img_matches );
+			/* Visual Debug Information - End */
+		}
+
+		bool processObject(unsigned object_idx, std::vector<DMatch>& good_matches)
+		{
+			Mat& descriptors_object = lib_.descriptors_objects[object_idx];
 
 			//-- Step 3: Matching descriptor vectors using FLANN matcher
 			FlannBasedMatcher matcher;
 			std::vector< DMatch > matches;
-			matcher.match( descriptors_object_, descriptors_scene, matches );
+			matcher.match( descriptors_object, descriptors_scene_, matches );
 
 			// m1 - main match / m2 - closest neighbor
 			//std::vector< std::vector< DMatch > > matches;
@@ -89,36 +136,6 @@ class ObjectDetector
 				}
 			}
 
-			/* Visual Debug Information - Start */
-			// Draw matches between object and scene
-			Mat img_matches;
-			drawMatches( img_object_, keypoints_object_, img_scene, keypoints_scene,
-					good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
-					vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-
-			if(good_matches.size() > MIN_CONVEX_HULL)
-			{
-				std::vector<Point2f> scene;
-				for( unsigned i = 0; i < good_matches.size(); ++i )
-				{
-					//-- Get the keypoints from the good matches
-					scene.push_back( keypoints_scene[ good_matches[i].trainIdx ].pt );
-				}
-
-				std::vector<Point2f> hull;
-				convexHull(scene, hull);
-
-				for(unsigned i = 0; i < hull.size()-1; ++i)
-				{
-					line( img_matches, hull[i] + Point2f( img_object_.cols, 0), hull[i+1] + Point2f( img_object_.cols, 0), Scalar(0, 255, 0), 4 );
-				}
-				line( img_matches, hull[hull.size()-1] + Point2f( img_object_.cols, 0), hull[0] + Point2f( img_object_.cols, 0), Scalar(0, 255, 0), 4 );
-			}
-			//-- Show detected matches
-			imshow( "Camera", img_matches );
-			/* Visual Debug Information - End */
-
-
 			if(good_matches.size() > MIN_MATCH_COUNT)
 			{
 				return true;
@@ -126,6 +143,7 @@ class ObjectDetector
 			return false;
 		}
 
+		ObjectLibrary& lib_;
 	private:
 		const unsigned MIN_CONVEX_HULL = 3;
 		const unsigned MAX_MATCH_COUNT = 10;
@@ -133,8 +151,9 @@ class ObjectDetector
 
 		FeatureDetector& detector_;
 		DescriptorExtractor& extractor_;
-		std::vector<KeyPoint> keypoints_object_;
-		Mat descriptors_object_;
-		Mat img_object_;
+
+		std::vector<KeyPoint> keypoints_scene_;
+		Mat descriptors_scene_;
+		Mat img_scene_;
 };
 #endif /* OBJECT_DETECTOR_H */

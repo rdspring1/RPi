@@ -1,3 +1,5 @@
+#include "object_library.h"
+
 #include "basic_image_detection.h"
 #include "image_sharing.h"
 #include "prob_object.h"
@@ -30,39 +32,19 @@ int main( int argc, char** argv )
 	cap.set(CV_CAP_PROP_FRAME_WIDTH, WIDTH);
 	cap.set(CV_CAP_PROP_FRAME_HEIGHT, HEIGHT);
 
-	// Initialize object feature
-	//Mat img_object = imread( argv[1], CV_LOAD_IMAGE_GRAYSCALE );
-	Mat img_object = imread( argv[1]);
-	if( !img_object.data )
-	{ 
-		std::cout<< " --(!) Error reading images " << std::endl; 
-		return -1; 
-	}
-
 	ORB detector(POINTS);
 	ORB extractor(POINTS);
 
-	//-- Step 1: Detect the keypoints using ORB Detector
-	std::vector<KeyPoint> keypoints_object;
-	detector.detect( img_object, keypoints_object );
-
-	//-- Step 2: Calculate descriptors (feature vectors)
-	Mat descriptors_object;
-	extractor.compute( img_object, keypoints_object, descriptors_object );
-	descriptors_object.convertTo(descriptors_object, CV_32F);
-
-	if(descriptors_object.empty())
-	{
-		throw std::runtime_error("Missing Object Descriptors");
-	}
+	// Import Object Library
+	ObjectLibrary lib(detector, extractor, argv[1]);
 
 	// Detection Algorithm
-	ObjectDetector d(detector, extractor, keypoints_object, descriptors_object, img_object);
+	ObjectDetector d(detector, extractor, lib);
 
 	// Information Fusion Algorithm
 	//BasicImageDetection* ib = new BasicImageDetection(d);
-	//ImageSharing* ib = new ImageSharing(d, argv[2]);
-	ProbObject* ib = new ProbObject(d, argv[2]);
+	ImageSharing* ib = new ImageSharing(d, argv[2]);
+	//ProbObject* ib = new ProbObject(d, argv[2]);
 
 	while(true)
 	{
