@@ -5,6 +5,7 @@
 #include "basic_image_detection.h"
 #include "image_sharing.h"
 #include "prob_object.h"
+#include "prob_subobject.h"
 
 #include <iostream>
 #include <string>
@@ -42,9 +43,10 @@ int main( int argc, char** argv )
 	ObjectDetector d(detector, extractor, argv[1]);
 
 	// Information Fusion Algorithm
-	BasicImageDetection* ib = new BasicImageDetection(d);
+	//BasicImageDetection* ib = new BasicImageDetection(d);
 	//ImageSharing* ib = new ImageSharing(d, argv[2]);
 	//ProbObject* ib = new ProbObject(d, argv[2]);
+	ProbSubObject* ib = new ProbSubObject(d, argv[2]);
 
 	benchmark b(cap, *ib, TEST_DURATION);	
 	b.run();
