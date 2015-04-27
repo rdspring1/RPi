@@ -13,7 +13,7 @@ find_package( OpenCV REQUIRED )
 include_directories (${Boost_INCLUDE_DIRS})
 include_directories (${CMAKE_SOURCE_DIR})
 
-add_executable(rpi_fusion manager.cpp)
+add_executable(rpi_fusion benchmark.cpp)
 
 target_link_libraries (rpi_fusion
 	${Boost_SYSTEM_LIBRARY}

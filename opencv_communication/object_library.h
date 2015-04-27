@@ -39,7 +39,7 @@ class ObjectLibrary
 					{
 						object_idx.push_back(image_names.size());
 						object_names.push_back(iter->path().filename().generic_string());
-						//std::cout << "Object: " <<  object_names.back() << std::endl;
+						//std::cout << "Object: " <<  object_names.back() << " " << object_idx.back() << std::endl;
 					}
 					else
 					{
@@ -78,11 +78,11 @@ class ObjectLibrary
 			//std::cout << "Num Objects: " << object_idx.size() << std::endl;
 		}
 
-		std::vector< std::string > object_names;
 		// the value for each object is its start index in the bag of images
 		// Images: Box - 6 sides | Hexagon Cylinder - 8
 		// Start Index: Box - 0 | Hexagon Cylinder - 6
 		std::vector< int > object_idx;
+		std::vector< std::string > object_names;
 
 		std::vector< std::string > image_names;
 		std::vector< cv::Mat > images;

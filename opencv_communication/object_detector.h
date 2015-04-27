@@ -23,8 +23,12 @@ using namespace cv;
 class ObjectDetector
 {
 	public:
+		ObjectDetector(FeatureDetector& detector, DescriptorExtractor& extractor, const char* filepath)
+			: lib_(detector, extractor, filepath), detector_(detector), extractor_(extractor) 
+		{}
+
 		ObjectDetector(FeatureDetector& detector, DescriptorExtractor& extractor, ObjectLibrary& lib)
-			: lib_(lib), detector_(detector), extractor_(extractor) 
+			: lib_(std::move(lib)), detector_(detector), extractor_(extractor) 
 		{}
 
 		void processScene(Mat& img_scene)
@@ -77,9 +81,10 @@ class ObjectDetector
 						hull[hull.size()-1] + Point2f( img_object.cols, 0), 
 						hull[0] + Point2f( img_object.cols, 0), 
 						Scalar(0, 255, 0), 4 );
+
 			}
 			//-- Show detected matches
-			imshow( "object" + object_idx, img_matches );
+			imshow( "object", img_matches );
 			/* Visual Debug Information - End */
 		}
 
@@ -143,7 +148,7 @@ class ObjectDetector
 			return false;
 		}
 
-		ObjectLibrary& lib_;
+		ObjectLibrary lib_;
 	private:
 		const unsigned MIN_CONVEX_HULL = 3;
 		const unsigned MAX_MATCH_COUNT = 10;

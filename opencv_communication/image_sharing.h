@@ -28,7 +28,7 @@ class ImageSharing : public FusionBase<image_msg>
 			: FusionBase<image_msg>(d, ip_address, create_buffer_fptr(boost::bind(&ImageSharing::create_buffer, _1 ))),
 			  belief(num_objects(), 0.5) {}
 
-		virtual std::vector<bool> detect(Mat& img_scene)
+		virtual IReport detect(Mat& img_scene)
 		{
 			processScene(img_scene);
 			std::vector<int> found(num_objects(), 0);
@@ -37,6 +37,7 @@ class ImageSharing : public FusionBase<image_msg>
 			{
 				std::vector< DMatch > local_matches;
 				found[idx] += (int) processObject(object_library().object_idx[idx], local_matches);
+				debugImage(object_library().object_idx[idx], local_matches);
 			}
 
 			std::list< std::vector<boost::asio::mutable_buffer> > neighbor_msgs;
@@ -76,13 +77,16 @@ class ImageSharing : public FusionBase<image_msg>
 			// Update Bayesian Probability Measure
 			// If greater than a certain level of probability, return true
 			// Model distribution - Binomial / Bernoulli 
-			std::vector<bool> results(num_objects());
+			IReport ir;	
 			for(unsigned idx = 0; idx < belief.size(); ++idx)
 			{
 				belief[idx] *= (found[idx] / (neighbor_msgs.size() + 1));
-				results[idx] = (belief[idx] >= THRESHOLD);
+				ir.objects.push_back((belief[idx] >= THRESHOLD));
+				ir.object_confidence.push_back(belief[idx]);
+				ir.images.push_back((belief[idx] >= THRESHOLD));
+				ir.image_confidence.push_back(belief[idx]);
 			}
-			return results;
+			return ir;
 		}
 
 		static void create_buffer(std::vector<boost::asio::mutable_buffer>& data)

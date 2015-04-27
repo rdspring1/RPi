@@ -10,7 +10,7 @@ class BasicImageDetection : public InterpreterBase
 	public:
 		BasicImageDetection(ObjectDetector& d) : InterpreterBase(d), match_list(MAX_THRESHOLD, false) {}
 
-		virtual std::vector<bool> detect(Mat& img_scene)
+		virtual IReport detect(Mat& img_scene)
 		{
 			processScene(img_scene);
 			std::vector< DMatch > local_matches;
@@ -27,18 +27,28 @@ class BasicImageDetection : public InterpreterBase
 			if(success)
 			{
 				++match_count;
-				std::cout << "-- matches : " << local_matches.size() << std::endl;
+				//std::cout << "-- matches : " << local_matches.size() << std::endl;
 			}
 			match_list.push_back(success);
 
+			IReport ir;
 			if(match_count >= MATCH_THRESHOLD)
 			{	
-				std::cout << "MATCH DETECTED: " << match_count << std::endl;
-				return std::vector<bool>(1, true);
+				//std::cout << "MATCH DETECTED: " << match_count << std::endl;
+				ir.objects.push_back(true);
+				ir.object_confidence.push_back(1);
+				ir.images.push_back(true);
+				ir.image_confidence.push_back(1);
 			}
-
-			std::cout << "NO MATCH DETECTED: " << match_count << std::endl;
-			return std::vector<bool>(1, false);
+			else
+			{
+				//std::cout << "NO MATCH DETECTED: " << match_count << std::endl;
+				ir.objects.push_back(false);
+				ir.object_confidence.push_back(0);
+				ir.images.push_back(false);
+				ir.image_confidence.push_back(0);
+			}
+			return ir;
 		}
 	private:
 		const double MAX_THRESHOLD = 10;

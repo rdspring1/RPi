@@ -1,5 +1,6 @@
 #include "object_library.h"
 #include "fps_avg.h"
+#include "benchmark.h"
 
 #include "basic_image_detection.h"
 #include "image_sharing.h"
@@ -9,6 +10,7 @@
 #include <string>
 #include <exception>
 
+const long TEST_DURATION = 15;
 const int POINTS = 3000;
 const int WIDTH = 320;
 const int HEIGHT = 240;
@@ -40,38 +42,12 @@ int main( int argc, char** argv )
 	ObjectDetector d(detector, extractor, argv[1]);
 
 	// Information Fusion Algorithm
-	//BasicImageDetection* ib = new BasicImageDetection(d);
-	ImageSharing* ib = new ImageSharing(d, argv[2]);
+	BasicImageDetection* ib = new BasicImageDetection(d);
+	//ImageSharing* ib = new ImageSharing(d, argv[2]);
 	//ProbObject* ib = new ProbObject(d, argv[2]);
 
-	FpsAvg fps(5);
-	while(true)
-	{
-		Mat img_scene;
-		cap >> img_scene;
-		cvtColor(img_scene, img_scene, CV_RGB2GRAY, 1);
-
-		if( !img_scene.data )
-		{ 
-			std::cout<< " --(!) Error reading images " << std::endl; 
-			return -1; 
-		}
-
-		try
-		{
-			ib->detect(img_scene);
-			fps.update();
-		}
-		catch (std::exception ex)
-		{
-			std::cout << ex.what() << std::endl;
-		}
-
-		if(waitKey(50) >= 0)
-		{
-			break;
-		}
-	}
+	benchmark b(cap, *ib, TEST_DURATION);	
+	b.run();
 
 	return 0;
 }

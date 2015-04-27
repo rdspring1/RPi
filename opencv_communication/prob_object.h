@@ -26,7 +26,7 @@ class ProbObject : public FusionBase<pobj_msg>
 			: FusionBase<pobj_msg>(d, ip_address, create_buffer_fptr(boost::bind(&ProbObject::create_buffer, _1 ))),
 			  belief(num_objects(), 0.5) {}
 
-		virtual std::vector<bool> detect(Mat& img_scene)
+		virtual IReport detect(Mat& img_scene)
 		{
 			// # of times the object is detected
 			processScene(img_scene);
@@ -66,13 +66,16 @@ class ProbObject : public FusionBase<pobj_msg>
 			// Update Bayesian Probability Measure
 			// If greater than a certain level of probability, return true
 			// Model distribution - Binomial / Bernoulli 
-			std::vector<bool> results(num_objects());
+			IReport ir;
 			for(unsigned idx = 0; idx < belief.size(); ++idx)
 			{
-				belief[idx] *= (found[idx] / (neighbor_msgs.size() + 1));
-				results[idx] = (belief[idx] >= THRESHOLD);
+                belief[idx] *= (found[idx] / (neighbor_msgs.size() + 1));
+                ir.objects.push_back((belief[idx] >= THRESHOLD));
+                ir.object_confidence.push_back(belief[idx]);
+                ir.images.push_back((belief[idx] >= THRESHOLD));
+                ir.image_confidence.push_back(belief[idx]);
 			}
-			return results;
+			return ir;
 		}
 
 		static void create_buffer(std::vector<boost::asio::mutable_buffer>& data)
