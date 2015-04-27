@@ -43,7 +43,96 @@ class ObjectDetector
 			//-- Step 2: Calculate descriptors (feature vectors)
 			descriptors_scene_.release();
 			extractor_.compute( img_scene, keypoints_scene_, descriptors_scene_ );
-			descriptors_scene_.convertTo(descriptors_scene_, CV_32F);
+		}
+
+		bool processObject(unsigned object_idx, std::vector<DMatch>& good_matches)
+		{
+			// Object Reference
+			Mat& descriptors_object = lib_.descriptors_objects[object_idx];
+			std::vector<KeyPoint>& keypoints_object = lib_.keypoints_objects[object_idx];
+
+			Mat results;
+			Mat dists;
+			std::vector<std::vector<cv::DMatch> > matches;
+			if(descriptors_object.type() == CV_8U)
+			{
+				// Binary Descriptors - ORB
+				cv::BFMatcher matcher(cv::NORM_HAMMING);
+				matcher.knnMatch(descriptors_object, descriptors_scene_, matches, k);
+			}
+			else
+			{
+				// Float Descriptors - SIFT, SURF
+				cv::BFMatcher matcher(cv::NORM_L2);
+				matcher.knnMatch(descriptors_object, descriptors_scene_, matches, k);
+			}
+
+			std::vector<int> pt_index;
+			std::vector<cv::Point2f> mpts_1, mpts_2;
+
+			/*
+			// Find correspondences by NNDR (Nearest Neighbor Distance Ratio)
+			// Check if this descriptor matches with those of the objects
+			for(int idx = 0; idx < descriptors_object.rows; ++idx)
+			{
+			// Apply NNDR
+			if((results.at<int>(idx,0) >= 0) && (results.at<int>(idx,1) >= 0) &&
+			(dists.at<float>(idx,0) > 0) && (dists.at<float>(idx,1) > 0) &&
+			(dists.at<float>(idx,0) <= nndrRatio * dists.at<float>(idx,1)))
+			{
+			//printf("q=%d dist1=%f dist2=%f\n", i, dists.at<float>(i,0), dists.at<float>(i,1));
+			pt_index.push_back(idx);
+			mpts_1.push_back(keypoints_object.at(idx).pt);
+			mpts_2.push_back(keypoints_scene_.at(results.at<int>(idx,0)).pt);
+			}
+			}
+			 */
+
+			for(unsigned idx = 0; idx < matches.size(); ++idx)
+			{
+				// Apply NNDR
+				if(matches.at(idx).size() == 2 &&
+						matches.at(idx).at(0).distance <= nndrRatio * matches.at(idx).at(1).distance)
+				{
+					//printf("q=%d dist1=%f dist2=%f\n", matches.at(idx).at(0).queryIdx, 
+					//	matches.at(idx).at(0).distance, matches.at(idx).at(1).distance);
+					pt_index.push_back(idx);
+					mpts_1.push_back(keypoints_object.at(matches.at(idx).at(0).queryIdx).pt);
+					mpts_2.push_back(keypoints_scene_.at(matches.at(idx).at(0).trainIdx).pt);
+				}
+			}
+
+			unsigned inliers = 0;
+			unsigned outliers = 0;
+			std::vector<uchar> outlier_mask;
+			if(pt_index.size() >= MIN_MATCH_COUNT)
+			{
+				cv::Mat H = findHomography(mpts_1,
+						mpts_2,
+						cv::RANSAC,
+						1.0,
+						outlier_mask);
+
+				for(unsigned int idx = 0; idx < mpts_1.size(); ++idx)
+				{
+					if(outlier_mask.at(idx))
+					{
+						++inliers;
+						good_matches.push_back(matches.at(pt_index[idx]).at(0));
+					}
+					else
+					{
+						++outliers;
+					}
+				}
+
+				std::cout << "INLIERS: "  << inliers << " OUTLIERS: " << outliers << std::endl;
+				if(inliers >= MIN_MATCH_COUNT)
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 
 		void debugImage(unsigned object_idx, std::vector<DMatch>& good_matches)
@@ -88,71 +177,12 @@ class ObjectDetector
 			/* Visual Debug Information - End */
 		}
 
-		bool processObject(unsigned object_idx, std::vector<DMatch>& good_matches)
-		{
-			Mat& descriptors_object = lib_.descriptors_objects[object_idx];
-
-			//-- Step 3: Matching descriptor vectors using FLANN matcher
-			FlannBasedMatcher matcher;
-			std::vector< DMatch > matches;
-			matcher.match( descriptors_object, descriptors_scene_, matches );
-
-			// m1 - main match / m2 - closest neighbor
-			//std::vector< std::vector< DMatch > > matches;
-			//matcher.knnMatch( descriptors_object, descriptors_scene, matches, k );
-
-			std::sort(matches.begin(), matches.end(), 
-					[](const DMatch& l, const DMatch& r) -> bool
-					{
-					return l.distance < r.distance;
-					});
-
-			//-- Quick calculation of max, min, avg, sd distances between keypoints
-			//double max_dist = matches[matches.size()-1].distance; 
-			//printf("-- Max dist : %f \n", max_dist );
-
-			/*
-			   double average = 0;
-			   for( int i = 0; i < descriptors_object.rows; i++ )
-			   { 
-			   average += matches[i].distance;
-			   }
-			   average /= descriptors_object.rows;
-			   printf("-- Avg dist : %f \n", average);
-
-			   double sd = 0;
-			   for( int i = 0; i < descriptors_object.rows; i++ )
-			   { 
-			   sd += pow((matches[i].distance - average), 2.0f);
-			   }
-			   sd /= descriptors_object.rows;
-			   printf("-- Avg dist : %f \n", sd );
-			 */
-
-			double min_dist = std::min(200.0f, matches[0].distance); 
-			//printf("-- Min dist : %f \n", min_dist );
-
-			//-- Draw only "good" matches - top N matches
-			for( unsigned i = 0; i < matches.size() && good_matches.size() < MAX_MATCH_COUNT; ++i )
-			{
-				if(matches[i].distance < 1.15 * min_dist)
-				{
-					good_matches.push_back(matches[i]); 
-				}
-			}
-
-			if(good_matches.size() > MIN_MATCH_COUNT)
-			{
-				return true;
-			}
-			return false;
-		}
-
 		ObjectLibrary lib_;
 	private:
+		const double nndrRatio = 0.8f;
+		const unsigned k = 2;
 		const unsigned MIN_CONVEX_HULL = 3;
-		const unsigned MAX_MATCH_COUNT = 10;
-		const unsigned MIN_MATCH_COUNT = 2;
+		const unsigned MIN_MATCH_COUNT = 14;
 
 		FeatureDetector& detector_;
 		DescriptorExtractor& extractor_;

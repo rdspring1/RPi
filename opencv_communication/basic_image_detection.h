@@ -15,7 +15,10 @@ class BasicImageDetection : public InterpreterBase
 			processScene(img_scene);
 			std::vector< DMatch > local_matches;
 			bool success = processObject(0, local_matches);
-			debugImage(0, local_matches);
+			if(success)
+			{
+				debugImage(0, local_matches);
+			}
 
 			// Determine if object is detected
 			if(match_list.front())

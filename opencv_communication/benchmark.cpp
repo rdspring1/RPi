@@ -11,8 +11,8 @@
 #include <string>
 #include <exception>
 
-const long TEST_DURATION = 15;
-const int POINTS = 3000;
+const long TEST_DURATION = 60;
+const int POINTS = 1500;
 const int WIDTH = 320;
 const int HEIGHT = 240;
 
@@ -43,10 +43,10 @@ int main( int argc, char** argv )
 	ObjectDetector d(detector, extractor, argv[1]);
 
 	// Information Fusion Algorithm
-	//BasicImageDetection* ib = new BasicImageDetection(d);
+	BasicImageDetection* ib = new BasicImageDetection(d);
 	//ImageSharing* ib = new ImageSharing(d, argv[2]);
 	//ProbObject* ib = new ProbObject(d, argv[2]);
-	ProbSubObject* ib = new ProbSubObject(d, argv[2]);
+	//ProbSubObject* ib = new ProbSubObject(d, argv[2]);
 
 	benchmark b(cap, *ib, TEST_DURATION);	
 	b.run();

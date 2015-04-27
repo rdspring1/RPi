@@ -61,7 +61,6 @@ class ObjectLibrary
 						//-- Step 2: Calculate descriptors (feature vectors)
 						Mat descriptors_object;
 						extractor_.compute( img_object, keypoints_object, descriptors_object );
-						descriptors_object.convertTo(descriptors_object, CV_32F);
 
 						if(descriptors_object.empty())
 						{
