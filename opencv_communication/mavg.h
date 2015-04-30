@@ -6,7 +6,7 @@
 class Mavg
 {
 	public:
-		Mavg(unsigned size) : match_list(size, false) {}
+		Mavg(unsigned size = DEFAULT_THRESHOLD) : match_list(size, false) {}
 
 		void update(bool value)
 		{
@@ -30,11 +30,12 @@ class Mavg
 
 		double avg() const
 		{
-			return (double) match_count / (double) match_list.size();
+			return ((double) match_count + 1.0) / ((double) match_list.size() + 2);
 		}
 
 	private:
 		std::list<bool> match_list;
 		unsigned match_count = 0;
+		const static unsigned DEFAULT_THRESHOLD = 12;
 };
 #endif /* MAVG_H */

@@ -24,35 +24,44 @@ class ProbObject : public FusionBase<pobj_msg>
 	public:
 		ProbObject(ObjectDetector& d, string ip_address) 
 			: FusionBase<pobj_msg>(d, ip_address, create_buffer_fptr(boost::bind(&ProbObject::create_buffer, _1 ))),
-			  belief(num_objects(), 0.5) {}
+			  object_tracker(num_objects()) {}
 
 		virtual IReport detect(Mat& img_scene)
 		{
 			// # of times the object is detected
 			processScene(img_scene);
-			std::vector<int> found(num_objects(), 0);
-			std::vector<unsigned char> out(num_objects());
-
 			for(unsigned idx = 0; idx < num_objects(); ++idx)
 			{
 				std::vector< DMatch > local_matches;
-				out[idx] = (unsigned char) processObject(object_library().object_idx[idx], local_matches);
-				found[idx] = (int) out[idx];
+				object_tracker[idx].update(processObject(object_library().object_idx[idx], local_matches));
 			}
 
 			std::list< std::vector<boost::asio::mutable_buffer> > neighbor_msgs;
 			receiver->async_receive_msgs(neighbor_msgs);
-			//std::cout << "msgs received: " << neighbor_msgs.size() << std::endl;
-			for(std::vector<boost::asio::mutable_buffer>& msg : neighbor_msgs)
-			{
-				pobj_msg* header = boost::asio::buffer_cast<pobj_msg*>(msg.front());
-				bool* body = boost::asio::buffer_cast<bool*>(msg.back());
+			std::vector<double> likelihood = process_neighbor_msgs(neighbor_msgs);
 
-				// Process neighbor message
-				for(unsigned idx = 0; idx < header->num_objects; ++idx)
+			// Update Bayesian Probability Measure
+			// If greater than a certain level of probability, return true
+			// Model distribution - Binomial / Bernoulli 
+			IReport ir;
+			std::vector<unsigned char> out(num_objects());
+			for(unsigned idx = 0; idx < object_tracker.size(); ++idx)
+			{
+				double belief = object_tracker[idx].avg();
+				bool found = (belief >= THRESHOLD);
+				out[idx] = (unsigned char) found;
+				if(!found)
 				{
-					found[idx] += (int) body[idx];
+					likelihood[idx] += belief;
+					likelihood[idx] /= (neighbor_msgs.size() + 1);
+					belief = likelihood[idx];
+					found = (belief >= THRESHOLD);
 				}
+
+				ir.objects.push_back(found);
+				ir.object_confidence.push_back(belief);
+				ir.images.push_back(found);
+				ir.image_confidence.push_back(belief);
 			}
 
 			// convert image into pobj_msg
@@ -62,20 +71,25 @@ class ProbObject : public FusionBase<pobj_msg>
 				sender->async_send_msg(make_msg(out));
 			}
 			++image_count_;
-
-			// Update Bayesian Probability Measure
-			// If greater than a certain level of probability, return true
-			// Model distribution - Binomial / Bernoulli 
-			IReport ir;
-			for(unsigned idx = 0; idx < belief.size(); ++idx)
-			{
-                belief[idx] *= (found[idx] / (neighbor_msgs.size() + 1));
-                ir.objects.push_back((belief[idx] >= THRESHOLD));
-                ir.object_confidence.push_back(belief[idx]);
-                ir.images.push_back((belief[idx] >= THRESHOLD));
-                ir.image_confidence.push_back(belief[idx]);
-			}
 			return ir;
+		}
+
+		std::vector<double> process_neighbor_msgs(std::list< std::vector<boost::asio::mutable_buffer> >& neighbor_msgs)
+		{
+			std::vector<double> likelihood(num_objects());
+			//std::cout << "msgs received: " << neighbor_msgs.size() << std::endl;
+			for(std::vector<boost::asio::mutable_buffer>& msg : neighbor_msgs)
+			{
+				pobj_msg* header = boost::asio::buffer_cast<pobj_msg*>(msg.front());
+				bool* body = boost::asio::buffer_cast<bool*>(msg.back());
+
+				// Process neighbor message
+				for(unsigned idx = 0; idx < header->num_objects; ++idx)
+				{
+					likelihood[idx] += (double) body[idx];
+				}
+			}
+			return likelihood;
 		}
 
 		static void create_buffer(std::vector<boost::asio::mutable_buffer>& data)
@@ -87,9 +101,9 @@ class ProbObject : public FusionBase<pobj_msg>
 	private:
 		const static unsigned BODY_SIZE = 2; // Number of objects
 		const unsigned MSG_RATE = 5;
-		const double THRESHOLD = 0.7;
-		std::vector<double> belief;
+		const double THRESHOLD = 0.75;
 		unsigned image_count_ = 0;
+		std::vector<Mavg> object_tracker;
 
 		std::vector<boost::asio::const_buffer> make_msg(std::vector<unsigned char>& objects)
 		{

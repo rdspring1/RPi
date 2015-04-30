@@ -18,6 +18,11 @@ class FpsAvg
 		asio_timer = new boost::thread(boost::bind(&boost::asio::io_service::run, &ios_timer));
 	}
 
+		~FpsAvg()
+		{
+			std::cout << "Frame Count: " << frame_count_ << " FPS: " << fps_ << std::endl; 
+		}
+
 		void update()
 		{
 			++frame_count_;
@@ -35,7 +40,6 @@ class FpsAvg
 				frame_count_ = 0;
 				timer.expires_at(timer.expires_at() + boost::posix_time::seconds(rate_));
 				timer.async_wait(boost::bind(&FpsAvg::printFPS, this, boost::asio::placeholders::error));
-				std::cout << "Elapsed Time: " << elapsed_time << " FPS: " << fps_ << std::endl; 
 			}
 		}
 

@@ -9,7 +9,7 @@
 class BasicImageDetection : public InterpreterBase
 {
 	public:
-		BasicImageDetection(ObjectDetector& d) : InterpreterBase(d), object_tracker(num_objects(), Mavg(MAX_THRESHOLD)) {}
+		BasicImageDetection(ObjectDetector& d) : InterpreterBase(d), object_tracker(num_objects()) {}
 
 		virtual IReport detect(Mat& img_scene)
 		{
@@ -44,7 +44,6 @@ class BasicImageDetection : public InterpreterBase
 			return ir;
 		}
 	private:
-		const double MAX_THRESHOLD = 10;
 		const double MATCH_THRESHOLD = 1;
 		std::vector<Mavg> object_tracker;
 };

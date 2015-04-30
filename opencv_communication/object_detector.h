@@ -126,9 +126,9 @@ class ObjectDetector
 					}
 				}
 
-				std::cout << "INLIERS: "  << inliers << " OUTLIERS: " << outliers << std::endl;
 				if(inliers >= MIN_MATCH_COUNT)
 				{
+					std::cout << "INLIERS: "  << inliers << " OUTLIERS: " << outliers << std::endl;
 					return true;
 				}
 			}

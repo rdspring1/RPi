@@ -26,22 +26,63 @@ class ImageSharing : public FusionBase<image_msg>
 	public:
 		ImageSharing(ObjectDetector& d, string ip_address)
 			: FusionBase<image_msg>(d, ip_address, create_buffer_fptr(boost::bind(&ImageSharing::create_buffer, _1 ))),
-			  belief(num_objects(), 0.5) {}
+			  object_tracker(num_objects()) {}
 
 		virtual IReport detect(Mat& img_scene)
 		{
 			processScene(img_scene);
-			std::vector<int> found(num_objects(), 0);
-
 			for(unsigned idx = 0; idx < num_objects(); ++idx)
 			{
 				std::vector< DMatch > local_matches;
-				found[idx] += (int) processObject(object_library().object_idx[idx], local_matches);
+				object_tracker[idx].update(processObject(object_library().object_idx[idx], local_matches));
 				debugImage(object_library().object_idx[idx], local_matches);
 			}
 
 			std::list< std::vector<boost::asio::mutable_buffer> > neighbor_msgs;
 			receiver->async_receive_msgs(neighbor_msgs);
+			std::vector<double> likelihood = process_neighbor_msgs(neighbor_msgs);
+
+			// convert image into image_msg
+			if(!(image_count_ % MSG_RATE))
+			{
+				std::vector<unsigned char> outImg;
+				cv::imencode(PNG, img_scene, outImg);
+				// send image to neighbors
+				sender->async_send_msg(make_msg(img_scene.type(), img_scene.rows, img_scene.cols, outImg.size(), outImg));
+
+				//std::cout << "Image Size: " << sizeof(img_scene.data) * img_scene.rows * img_scene.cols << std::endl;
+				//std::cout << "Compressed Image Size: " << outImg.size() << std::endl;
+			}
+			++image_count_;
+
+			// Update Bayesian Probability Measure
+			// If greater than a certain level of probability, return true
+			// Model distribution - Binomial / Bernoulli 
+			IReport ir;	
+			for(unsigned idx = 0; idx < object_tracker.size(); ++idx)
+			{
+				double belief = object_tracker[idx].avg();
+				std::cout << "belief: " << belief << std::endl;
+				bool found = (belief >= THRESHOLD);
+				if(!found)
+				{
+					likelihood[idx] += belief;
+					likelihood[idx] /= (neighbor_msgs.size() + 1);
+					belief = likelihood[idx];
+					found = (belief >= THRESHOLD);
+				}
+
+				ir.objects.push_back(found);
+				ir.object_confidence.push_back(belief);
+				ir.images.push_back(found);
+				ir.image_confidence.push_back(belief);
+			}
+			return ir;
+		}
+
+		std::vector<double> process_neighbor_msgs(std::list< std::vector<boost::asio::mutable_buffer> >& neighbor_msgs)
+		{
+			std::vector<double> likelihood(num_objects());
 			//std::cout << "msgs received: " << neighbor_msgs.size() << std::endl;
 			for(std::vector<boost::asio::mutable_buffer>& msg : neighbor_msgs)
 			{
@@ -57,36 +98,10 @@ class ImageSharing : public FusionBase<image_msg>
 				for(unsigned idx = 0; idx < num_objects(); ++idx)
 				{
 					std::vector< DMatch > neighbor_matches;
-					found[idx] += (int) processObject(object_library().object_idx[idx], neighbor_matches);
+					likelihood[idx] += (double) processObject(object_library().object_idx[idx], neighbor_matches);
 				}
 			}
-
-			// convert image into image_msg
-			if(!(image_count_ % MSG_RATE))
-			{
-				std::vector<unsigned char> outImg;
-				cv::imencode(PNG, img_scene, outImg);
-				//std::cout << "Image Size: " << sizeof(img_scene.data) * img_scene.rows * img_scene.cols << std::endl;
-				//std::cout << "Compressed Image Size: " << outImg.size() << std::endl;
-
-				// send image to neighbors
-				sender->async_send_msg(make_msg(img_scene.type(), img_scene.rows, img_scene.cols, outImg.size(), outImg));
-			}
-			++image_count_;
-
-			// Update Bayesian Probability Measure
-			// If greater than a certain level of probability, return true
-			// Model distribution - Binomial / Bernoulli 
-			IReport ir;	
-			for(unsigned idx = 0; idx < belief.size(); ++idx)
-			{
-				belief[idx] *= (found[idx] / (neighbor_msgs.size() + 1));
-				ir.objects.push_back((belief[idx] >= THRESHOLD));
-				ir.object_confidence.push_back(belief[idx]);
-				ir.images.push_back((belief[idx] >= THRESHOLD));
-				ir.image_confidence.push_back(belief[idx]);
-			}
-			return ir;
+			return likelihood;
 		}
 
 		static void create_buffer(std::vector<boost::asio::mutable_buffer>& data)
@@ -113,9 +128,8 @@ class ImageSharing : public FusionBase<image_msg>
 
 		const static unsigned BODY_SIZE = 66560; // 65 KB buffer
 		const unsigned MSG_RATE = 20;
-		const double THRESHOLD = 0.7;
-		std::vector<double> belief;
+		const double THRESHOLD = 0.75;
 		unsigned image_count_ = 0;
-
+		std::vector<Mavg> object_tracker;
 };
 #endif /* IMAGE_SHARING_H */
