@@ -29,11 +29,11 @@ class ProbObject : public FusionBase<pobj_msg>
 		virtual IReport detect(Mat& img_scene)
 		{
 			// # of times the object is detected
-			processScene(img_scene);
+			ImageData scene = processScene(img_scene);
 			for(unsigned idx = 0; idx < num_objects(); ++idx)
 			{
 				std::vector< DMatch > local_matches;
-				object_tracker[idx].update(processObject(object_library().object_idx[idx], local_matches));
+				object_tracker[idx].update(processObject(scene, object_library().object_idx[idx], local_matches));
 			}
 
 			std::list< std::vector<boost::asio::mutable_buffer> > neighbor_msgs;

@@ -33,6 +33,25 @@ class ObjectLibrary
 		processFolder(filepath);
 	}
 
+		ImageData processImage(Mat& img)
+		{
+			ImageData data;
+
+			//-- Step 0: Store scene image
+			data.image = img;
+
+			//-- Step 1: Detect the keypoints using ORB Detector
+			detector_.detect( data.image, data.keypoints );
+
+			//-- Step 2: Calculate descriptors (feature vectors)
+			extractor_.compute( data.image, data.keypoints, data.descriptors );
+			if(data.descriptors.empty())
+			{
+				throw std::runtime_error("Missing Object Descriptors");
+			}
+			return data;
+		}
+
 		void processFolder(const char* filepath)
 		{
 			// Create object library
@@ -51,27 +70,15 @@ class ObjectLibrary
 					}
 					else
 					{
-						ImageData img;
-						img.name = iter->path().filename().generic_string();
-						//std::cout << "Image: " << img.name << std::endl;
-
 						// Initialize object feature
 						Mat img_object = imread(iter->path().generic_string(), CV_LOAD_IMAGE_COLOR);
 						if( !img_object.data )
 						{ 
 							throw std::runtime_error("Error Reading Image"); 
 						}
-						img.image = img_object;
-
-						//-- Step 1: Detect the keypoints using ORB Detector
-						detector_.detect( img_object, img.keypoints );
-
-						//-- Step 2: Calculate descriptors (feature vectors)
-						extractor_.compute( img_object, img.keypoints, img.descriptors );
-						if(img.descriptors.empty())
-						{
-							throw std::runtime_error("Missing Object Descriptors");
-						}
+						ImageData img = processImage(img_object);
+						img.name = iter->path().filename().generic_string();
+						//std::cout << "Image: " << img.name << std::endl;
 
 						//-- Step 3: Add to object library
 						images.push_back(std::move(img));

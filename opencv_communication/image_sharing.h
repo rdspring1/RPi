@@ -30,12 +30,12 @@ class ImageSharing : public FusionBase<image_msg>
 
 		virtual IReport detect(Mat& img_scene)
 		{
-			processScene(img_scene);
+			ImageData scene = processScene(img_scene);
 			for(unsigned idx = 0; idx < num_objects(); ++idx)
 			{
 				std::vector< DMatch > local_matches;
-				object_tracker[idx].update(processObject(object_library().object_idx[idx], local_matches));
-				debugImage(object_library().object_idx[idx], local_matches);
+				object_tracker[idx].update(processObject(scene, object_library().object_idx[idx], local_matches));
+				debugImage(scene, object_library().object_idx[idx], local_matches);
 			}
 
 			std::list< std::vector<boost::asio::mutable_buffer> > neighbor_msgs;
@@ -95,10 +95,11 @@ class ImageSharing : public FusionBase<image_msg>
 
 				// Process neighbor image
 				// Increment found counter if object is successfully detected
+				ImageData scene = processScene(neighbor_image);
 				for(unsigned idx = 0; idx < num_objects(); ++idx)
 				{
 					std::vector< DMatch > neighbor_matches;
-					likelihood[idx] += (double) processObject(object_library().object_idx[idx], neighbor_matches);
+					likelihood[idx] += (double) processObject(scene, object_library().object_idx[idx], neighbor_matches);
 				}
 			}
 			return likelihood;

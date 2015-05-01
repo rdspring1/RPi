@@ -48,19 +48,19 @@ class InterpreterBase
 			return d_.lib_;
 		}
 
-		void processScene(cv::Mat img_scene)
+		ImageData processScene(cv::Mat img_scene)
 		{
-			d_.processScene(img_scene);
+			return d_.processScene(img_scene);
 		}
 
-		bool processObject(unsigned idx, std::vector< DMatch >& good_matches)
+		bool processObject(ImageData& scene, unsigned idx, std::vector< DMatch >& good_matches)
 		{
-			return d_.processObject(idx, good_matches);
+			return d_.processObject(scene, idx, good_matches);
 		}
 
-		void debugImage(unsigned idx, std::vector< DMatch >& good_matches)
+		void debugImage(ImageData& scene, unsigned idx, std::vector< DMatch >& good_matches)
 		{
-			d_.debugImage(img_name(idx), idx, good_matches);
+			d_.debugImage(img_name(idx), scene, idx, good_matches);
 		}
 	private:
 		ObjectDetector& d_;
