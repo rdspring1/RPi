@@ -11,7 +11,7 @@
 #include <string>
 #include <exception>
 
-const long TEST_DURATION = 20;
+const long TEST_DURATION = 60;
 const int POINTS = 1500;
 const int WIDTH = 320;
 const int HEIGHT = 240;

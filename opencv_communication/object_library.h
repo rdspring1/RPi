@@ -77,8 +77,14 @@ class ObjectLibrary
 							throw std::runtime_error("Error Reading Image"); 
 						}
 						ImageData img = processImage(img_object);
-						img.name = iter->path().filename().generic_string();
-						//std::cout << "Image: " << img.name << std::endl;
+						img.name = iter->path().stem().generic_string();
+						//std::cout << "Object: " << object_names.back() << " Image: " << img.name << std::endl;
+
+						if(img.name == object_names.back())
+						{
+							object_img_idx.push_back(images.size());
+							//std::cout << object_names.back() << " " << images.size() << std::endl;
+						}
 
 						//-- Step 3: Add to object library
 						images.push_back(std::move(img));
@@ -94,6 +100,7 @@ class ObjectLibrary
 		// Start Index: Box - 0 | Hexagon Cylinder - 6
 		std::vector< int > object_idx;
 		std::vector< std::string > object_names;
+		std::vector< int > object_img_idx;
 		std::vector< ImageData > images;
 
 	private:

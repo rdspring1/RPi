@@ -17,8 +17,8 @@ class BasicImageDetection : public InterpreterBase
 			for(unsigned idx = 0; idx < num_objects(); ++idx)
 			{
 				std::vector< DMatch > local_matches;
-				object_tracker[idx].update(processObject(scene, object_library().object_idx[idx], local_matches));
-				debugImage(scene, object_library().object_idx[idx], local_matches);
+				object_tracker[idx].update(processObject(scene, object_library().object_img_idx[idx], local_matches));
+				debugImage(scene, object_library().object_img_idx[idx], local_matches);
 			}
 
 			IReport ir;

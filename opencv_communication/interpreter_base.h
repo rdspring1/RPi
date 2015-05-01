@@ -38,7 +38,7 @@ class InterpreterBase
 			return d_.lib_.images.at(idx).name;
 		}
 
-		ImageData img(unsigned idx)
+		ImageData& img(unsigned idx)
 		{
 			return d_.lib_.images.at(idx);
 		}
