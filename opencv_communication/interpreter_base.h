@@ -55,7 +55,7 @@ class InterpreterBase
 
 		void debugImage(unsigned idx, std::vector< DMatch >& good_matches)
 		{
-			d_.debugImage(idx, good_matches);
+			d_.debugImage(img_name(idx), idx, good_matches);
 		}
 	private:
 		ObjectDetector& d_;

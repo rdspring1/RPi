@@ -135,7 +135,7 @@ class ObjectDetector
 			return false;
 		}
 
-		void debugImage(unsigned object_idx, std::vector<DMatch>& good_matches)
+		void debugImage(std::string name, unsigned object_idx, std::vector<DMatch>& good_matches)
 		{
 			Mat& img_object = lib_.images[object_idx];
 			std::vector<KeyPoint>& keypoints_object = lib_.keypoints_objects[object_idx];
@@ -173,7 +173,7 @@ class ObjectDetector
 
 			}
 			//-- Show detected matches
-			imshow( "object", img_matches );
+			imshow( name, img_matches );
 			/* Visual Debug Information - End */
 		}
 
