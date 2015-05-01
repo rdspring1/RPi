@@ -57,7 +57,7 @@ class ProbSubObject : public FusionBase<pobj_msg>
 			for(unsigned idx = 0; idx < num_objects(); ++idx)
 			{
 				const unsigned LIMIT = (idx == num_objects()-1) 
-					? object_library().image_names.size() : object_library().object_idx[idx+1] ;
+					? num_images() : object_library().object_idx[idx+1] ;
 				//const double SIZE = LIMIT - object_library().object_idx[idx]; 
 
 				double belief = 0;

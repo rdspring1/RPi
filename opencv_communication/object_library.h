@@ -13,6 +13,14 @@
 using namespace cv;
 using namespace boost::filesystem;
 
+struct ImageData
+{
+	std::string name;
+	cv::Mat image;
+	cv::Mat descriptors;
+	std::vector<cv::KeyPoint> keypoints;
+};
+
 class ObjectLibrary
 {
 	public:
@@ -37,14 +45,15 @@ class ObjectLibrary
 				{
 					if(is_directory(iter->path()))
 					{
-						object_idx.push_back(image_names.size());
+						object_idx.push_back(images.size());
 						object_names.push_back(iter->path().filename().generic_string());
 						//std::cout << "Object: " <<  object_names.back() << " " << object_idx.back() << std::endl;
 					}
 					else
 					{
-						image_names.push_back(iter->path().filename().generic_string());
-						//std::cout << "Image: " << image_names.back() << std::endl;
+						ImageData img;
+						img.name = iter->path().filename().generic_string();
+						//std::cout << "Image: " << img.name << std::endl;
 
 						// Initialize object feature
 						Mat img_object = imread(iter->path().generic_string(), CV_LOAD_IMAGE_COLOR);
@@ -52,24 +61,20 @@ class ObjectLibrary
 						{ 
 							throw std::runtime_error("Error Reading Image"); 
 						}
-						images.push_back(img_object);
+						img.image = img_object;
 
 						//-- Step 1: Detect the keypoints using ORB Detector
-						std::vector<KeyPoint> keypoints_object;
-						detector_.detect( img_object, keypoints_object );
+						detector_.detect( img_object, img.keypoints );
 
 						//-- Step 2: Calculate descriptors (feature vectors)
-						Mat descriptors_object;
-						extractor_.compute( img_object, keypoints_object, descriptors_object );
-
-						if(descriptors_object.empty())
+						extractor_.compute( img_object, img.keypoints, img.descriptors );
+						if(img.descriptors.empty())
 						{
 							throw std::runtime_error("Missing Object Descriptors");
 						}
 
 						//-- Step 3: Add to object library
-						keypoints_objects.push_back(std::move(keypoints_object));
-						descriptors_objects.push_back(std::move(descriptors_object));
+						images.push_back(std::move(img));
 					}
 					++iter;
 				}
@@ -82,11 +87,7 @@ class ObjectLibrary
 		// Start Index: Box - 0 | Hexagon Cylinder - 6
 		std::vector< int > object_idx;
 		std::vector< std::string > object_names;
-
-		std::vector< std::string > image_names;
-		std::vector< cv::Mat > images;
-		std::vector< cv::Mat > descriptors_objects;
-		std::vector< std::vector<cv::KeyPoint> > keypoints_objects;
+		std::vector< ImageData > images;
 
 	private:
 		FeatureDetector& detector_;

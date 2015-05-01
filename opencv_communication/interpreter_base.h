@@ -25,7 +25,7 @@ class InterpreterBase
 
 		unsigned num_images() const
 		{
-			return d_.lib_.image_names.size();
+			return d_.lib_.images.size();
 		}
 
 		std::string obj_name(unsigned idx) const
@@ -35,7 +35,12 @@ class InterpreterBase
 
 		std::string img_name(unsigned idx) const
 		{
-			return d_.lib_.image_names.at(idx);
+			return d_.lib_.images.at(idx).name;
+		}
+
+		ImageData img(unsigned idx)
+		{
+			return d_.lib_.images.at(idx);
 		}
 
 		const ObjectLibrary& object_library() const

@@ -48,8 +48,8 @@ class ObjectDetector
 		bool processObject(unsigned object_idx, std::vector<DMatch>& good_matches)
 		{
 			// Object Reference
-			Mat& descriptors_object = lib_.descriptors_objects[object_idx];
-			std::vector<KeyPoint>& keypoints_object = lib_.keypoints_objects[object_idx];
+			Mat& descriptors_object = lib_.images[object_idx].descriptors;
+			std::vector<KeyPoint>& keypoints_object = lib_.images[object_idx].keypoints;
 
 			Mat results;
 			Mat dists;
@@ -70,24 +70,8 @@ class ObjectDetector
 			std::vector<int> pt_index;
 			std::vector<cv::Point2f> mpts_1, mpts_2;
 
-			/*
 			// Find correspondences by NNDR (Nearest Neighbor Distance Ratio)
 			// Check if this descriptor matches with those of the objects
-			for(int idx = 0; idx < descriptors_object.rows; ++idx)
-			{
-			// Apply NNDR
-			if((results.at<int>(idx,0) >= 0) && (results.at<int>(idx,1) >= 0) &&
-			(dists.at<float>(idx,0) > 0) && (dists.at<float>(idx,1) > 0) &&
-			(dists.at<float>(idx,0) <= nndrRatio * dists.at<float>(idx,1)))
-			{
-			//printf("q=%d dist1=%f dist2=%f\n", i, dists.at<float>(i,0), dists.at<float>(i,1));
-			pt_index.push_back(idx);
-			mpts_1.push_back(keypoints_object.at(idx).pt);
-			mpts_2.push_back(keypoints_scene_.at(results.at<int>(idx,0)).pt);
-			}
-			}
-			 */
-
 			for(unsigned idx = 0; idx < matches.size(); ++idx)
 			{
 				// Apply NNDR
@@ -137,8 +121,8 @@ class ObjectDetector
 
 		void debugImage(std::string name, unsigned object_idx, std::vector<DMatch>& good_matches)
 		{
-			Mat& img_object = lib_.images[object_idx];
-			std::vector<KeyPoint>& keypoints_object = lib_.keypoints_objects[object_idx];
+			Mat& img_object = lib_.images[object_idx].image;
+			std::vector<KeyPoint>& keypoints_object = lib_.images[object_idx].keypoints;
 
 			/* Visual Debug Information - Start */
 			// Draw matches between object and scene
