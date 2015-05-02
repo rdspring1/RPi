@@ -1,5 +1,5 @@
-#ifndef IMAGE_SHARING_H
-#define IMAGE_SHARING_H
+#ifndef IS_RELATIVE_FEATURES_H
+#define IS_RELATIVE_FEATURES_H
 
 #include "fusion_base.h"
 #include "image_formats.h"
@@ -19,28 +19,50 @@ struct image_msg
 	int rows;
 	int cols;
 	unsigned size;
-}; 
+};
 
-class ImageSharing : public FusionBase<image_msg>
+class ISRelativeFeatures : public FusionBase<image_msg>
 {
 	public:
+		typedef std::vector< DMatch > Features;
+
 		ImageSharing(ObjectDetector& d, string ip_address)
 			: FusionBase<image_msg>(d, ip_address, create_buffer_fptr(boost::bind(&ImageSharing::create_buffer, _1 ))),
-			  object_tracker(num_objects()) {}
+			object_tracker(num_objects()) {}
 
 		virtual IReport detect(Mat& img_scene)
 		{
-			ImageData scene = processScene(img_scene);
-			for(unsigned idx = 0; idx < num_objects(); ++idx)
-			{
-				std::vector< DMatch > local_matches;
-				object_tracker[idx].update(processObject(scene, object_library().object_img_idx[idx], local_matches));
-				debugImage(scene, object_library().object_img_idx[idx], local_matches);
-			}
-
 			std::list< std::vector<boost::asio::mutable_buffer> > neighbor_msgs;
 			receiver->async_receive_msgs(neighbor_msgs);
-			std::vector<double> likelihood = process_neighbor_msgs(neighbor_msgs);
+
+			ImageData local_scene = processScene(img_scene);
+			for(unsigned idx = 0; idx < num_objects(); ++idx)
+			{
+				int image_idx = object_library().object_img_idx[idx];
+				Features local_matches;
+				processObject(local_scene, image_idx, local_matches);
+
+				for(std::vector<boost::asio::mutable_buffer>& msg : neighbor_msgs)
+				{
+					image_msg* header = boost::asio::buffer_cast<image_msg*>(msg.front());
+					unsigned char* body = boost::asio::buffer_cast<unsigned char*>(msg.back());
+
+					// Convert image_msg back into image
+					cv::Mat img_buf = cv::Mat(header->rows, header->cols, header->type, body);
+					cv::Mat neighbor_image = cv::imdecode(img_buf, CV_LOAD_IMAGE_GRAYSCALE);
+					ImageData neighbor_scene = processScene(neighbor_image);
+
+					// Process neighbor image
+					Features neighbor_matches;
+					processObject(neighbor_scene, image_idx, neighbor_matches);
+
+					process_neighbor_msg(img(image_idx), local_scene, neighbor_scene, local_matches, neighbor_matches);
+
+					// TODO Compute Homography and Threshold
+					// TODO Update result for the object
+				}
+				debugImage(local_scene, object_library().object_img_idx[idx], local_matches);
+			}
 
 			// convert image into image_msg
 			if(!(image_count_ % MSG_RATE))
@@ -62,15 +84,8 @@ class ImageSharing : public FusionBase<image_msg>
 			for(unsigned idx = 0; idx < object_tracker.size(); ++idx)
 			{
 				double belief = object_tracker[idx].avg();
-				std::cout << "belief: " << belief << std::endl;
+				//std::cout << "belief: " << belief << std::endl;
 				bool found = (belief >= THRESHOLD);
-				if(!found)
-				{
-					likelihood[idx] += belief;
-					likelihood[idx] /= (neighbor_msgs.size() + 1);
-					belief = likelihood[idx];
-					found = (belief >= THRESHOLD);
-				}
 
 				ir.objects.push_back(found);
 				ir.object_confidence.push_back(belief);
@@ -80,29 +95,27 @@ class ImageSharing : public FusionBase<image_msg>
 			return ir;
 		}
 
-		std::vector<double> process_neighbor_msgs(std::list< std::vector<boost::asio::mutable_buffer> >& neighbor_msgs)
+		void process_neighbor_msg(ImageData& obj, ImageData& local_scene, ImageData& neighbor_scene, 
+				Features& local_matches, Features& neighbor_matches)
 		{
-			std::vector<double> likelihood(num_objects());
-			//std::cout << "msgs received: " << neighbor_msgs.size() << std::endl;
-			for(std::vector<boost::asio::mutable_buffer>& msg : neighbor_msgs)
+			const size_t SIZE = local_matches.size();
+			for(size_t idx = 0; idx < SIZE; ++idx)
 			{
-				image_msg* header = boost::asio::buffer_cast<image_msg*>(msg.front());
-				unsigned char* body = boost::asio::buffer_cast<unsigned char*>(msg.back());
+				// TODO Find nearest neighbor match
+				//DMatch nn = nearest_neighbor(local_matches[idx], neighbor_matches);
 
-				// Convert image_msg back into image
-				cv::Mat img_buf = cv::Mat(header->rows, header->cols, header->type, body);
-				cv::Mat neighbor_image = cv::imdecode(img_buf, CV_LOAD_IMAGE_GRAYSCALE);
+				// TODO Compute Relative Position (B -> A)
+				
+				// TODO Find nearest keypoint in local scene (B -> A)
 
-				// Process neighbor image
-				// Increment found counter if object is successfully detected
-				ImageData neighbor_scene = processScene(neighbor_image);
-				for(unsigned idx = 0; idx < num_objects(); ++idx)
-				{
-					std::vector< DMatch > neighbor_matches;
-					likelihood[idx] += (double) processObject(neighbor_scene, object_library().object_img_idx[idx], neighbor_matches);
-				}
+				// TODO Compute Relative Position (A -> B)
+				
+				// TODO Find nearest keypoint in neighbor scene (A -> B)
+
+				// TODO Determine distance between guess and object keypoint passes NNDR
+
+				// TODO Add new match to local set
 			}
-			return likelihood;
 		}
 
 		static void create_buffer(std::vector<boost::asio::mutable_buffer>& data)
@@ -133,4 +146,4 @@ class ImageSharing : public FusionBase<image_msg>
 		unsigned image_count_ = 0;
 		std::vector<Mavg> object_tracker;
 };
-#endif /* IMAGE_SHARING_H */
+#endif /* IS_RELATIVE_FEATURES_H */
