@@ -10,6 +10,7 @@
 #include <iostream>
 #include <string>
 #include <exception>
+#include <stdlib.h> 
 
 const long TEST_DURATION = 60;
 const int POINTS = 1500;
@@ -20,9 +21,9 @@ const int HEIGHT = 240;
 int main( int argc, char** argv )
 {
 	// Collect Arguments
-	if( argc != 3 )
+	if( argc != 4 )
 	{ 
-		std::cout << " Usage: ./opencv_communication <object_folder> <ip_address>" << std::endl; 
+		std::cout << " Usage: ./opencv_communication <object_folder> <robot_id> <ip_address>" << std::endl; 
 		return -1; 
 	}
 
@@ -43,10 +44,10 @@ int main( int argc, char** argv )
 	ObjectDetector d(detector, extractor, argv[1]);
 
 	// Information Fusion Algorithm
-	BasicImageDetection* ib = new BasicImageDetection(d);
-	//ImageSharing* ib = new ImageSharing(d, argv[2]);
-	//ProbObject* ib = new ProbObject(d, argv[2]);
-	//ProbSubObject* ib = new ProbSubObject(d, argv[2]);
+	//BasicImageDetection* ib = new BasicImageDetection(d);
+	ImageSharing* ib = new ImageSharing(d, atoi(argv[2]), argv[3]);
+	//ProbObject* ib = new ProbObject(d, atoi(argv[2]), argv[3]);
+	//ProbSubObject* ib = new ProbSubObject(d, atoi(argv[2]), argv[3]);
 
 	benchmark b(cap, *ib, TEST_DURATION);	
 	b.run();

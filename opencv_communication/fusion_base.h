@@ -16,19 +16,20 @@ class FusionBase : public InterpreterBase
 	public:
 		typedef boost::function<void (std::vector<boost::asio::mutable_buffer>&)> create_buffer_fptr;
 
-		FusionBase(ObjectDetector& d, string ip_address, create_buffer_fptr create_buffer) 
-			: InterpreterBase(d), work_send(ios_send), work_recv(ios_send)
+		FusionBase(ObjectDetector& d, unsigned robot_id, string ip_address, create_buffer_fptr create_buffer) 
+			: InterpreterBase(d), robot_id_(robot_id), work_send(ios_send), work_recv(ios_send)
 	{
 		// Setup Bi-Direction Communication
-		receiver = new udp_receiver<T>(ios_receive, port, create_buffer); 
-		sender = new udp_sender<T>(ios_send, boost::asio::ip::address::from_string(ip_address), port);
+		receiver = new UdpReceiver<T>(ios_receive, port, create_buffer); 
+		sender = new UdpSender<T>(ios_send, boost::asio::ip::address::from_string(ip_address), port);
 		asio_send = new boost::thread(boost::bind(&boost::asio::io_service::run, &ios_send));
 		asio_receiver = new boost::thread(boost::bind(&boost::asio::io_service::run, &ios_receive));
 	}
 
 	protected:
-		udp_receiver<T>* receiver;
-		udp_sender<T>* sender;
+		UdpReceiver<T>* receiver;
+		UdpSender<T>* sender;
+		const unsigned robot_id_;
 
 	private:
 		boost::asio::io_service ios_send;

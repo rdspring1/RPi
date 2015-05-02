@@ -3,6 +3,8 @@
 
 #include "object_detector.h"
 
+#include <time.h>
+
 struct IReport
 {
 	std::vector<bool> objects;
@@ -14,7 +16,17 @@ struct IReport
 class InterpreterBase
 {
 	public:
-		InterpreterBase(ObjectDetector& d) : d_(d) {}
+		InterpreterBase(ObjectDetector& d) : d_(d) 
+		{
+			struct tm bt = {0};
+			bt.tm_hour = 0;
+			bt.tm_min = 0;
+			bt.tm_sec = 0;
+			bt.tm_year = 100;
+			bt.tm_mon = 0;
+			bt.tm_mday = 1;
+			basetime = mktime(&bt);
+		}
 
 		virtual IReport detect(Mat& img_scene) = 0;
 
@@ -62,7 +74,15 @@ class InterpreterBase
 		{
 			d_.debugImage(img_name(idx), scene, idx, good_matches);
 		}
+
+		double returnTimestamp() const
+		{
+			time_t current_time;
+			time(&current_time);
+			return difftime(current_time, basetime);
+		}
 	private:
 		ObjectDetector& d_;
+		time_t basetime;
 };
 #endif /* INTERPRETER_BASE_H */

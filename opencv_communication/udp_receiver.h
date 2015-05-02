@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
+#include <unordered_map>
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
@@ -14,22 +15,23 @@
 #include <boost/thread/mutex.hpp>
 
 template<typename T>
-class udp_receiver
+class UdpReceiver
 {
 	public:
+		typedef std::unordered_map<unsigned, std::vector<boost::asio::mutable_buffer> > MessageList;
 		typedef boost::function<void (std::vector<boost::asio::mutable_buffer>&)> create_buffer_fptr;
 
-		udp_receiver(boost::asio::io_service& io_service, unsigned short port, create_buffer_fptr create_buffer) 
+		UdpReceiver(boost::asio::io_service& io_service, unsigned short port, create_buffer_fptr create_buffer) 
 			: socket_(io_service, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port)), create_buffer_(create_buffer)
 		{
 			create_buffer_(data_);
 			socket_.set_option(boost::asio::ip::udp::socket::reuse_address(true));
 			socket_.async_receive_from(data_, sender_endpoint_,
-					boost::bind(&udp_receiver::handle_receive_from, this, 
+					boost::bind(&UdpReceiver::handle_receive_from, this, 
 						boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 		}
 
-		void async_receive_msgs(std::list< std::vector<boost::asio::mutable_buffer> >& data)
+		void async_receive_msgs(MessageList& data)
 		{
 			// lock
 			mtx_.lock();
@@ -55,23 +57,28 @@ class udp_receiver
 					// lock
 					mtx_.lock();
 
-					++last_message_id;
-
 					// cast buffer to template type T
-					T* header = boost::asio::buffer_cast<T*>(data_.front());
+					T* new_header = boost::asio::buffer_cast<T*>(data_.front());
 					//std::cout << "Complete: " << bytes_recvd << " Header: " << sizeof(T) << " Body: " << header->size << std::endl;
-					if(bytes_recvd == header->size)
+					if(bytes_recvd == new_header->size)
 					{
-						// add new msg to stored data
-						std::vector<boost::asio::mutable_buffer> new_data;
-						create_buffer_(new_data);
-						std::swap(data_, new_data);
-						stored_data.push_back(std::move(new_data));
+						// Check if this message is from a new neighbor
+						bool update = (stored_data.count(new_header->robot_id) == 0);
 
-						if(header->message_id != last_message_id)
+						// If not, replace with newer message (check timestamp)
+						if(!update)
 						{
-							last_message_id = header->message_id;
-							++lost_message_count;
+							T* current_header = boost::asio::buffer_cast<T*>(stored_data[new_header->robot_id].front());
+							update = (new_header->timestamp > current_header->timestamp);
+						}
+
+						if(update)
+						{
+							// add new msg to stored data
+							std::vector<boost::asio::mutable_buffer> new_data;
+							create_buffer_(new_data);
+							std::swap(data_, new_data);
+							stored_data[new_header->robot_id] = std::move(new_data);
 						}
 					}
 
@@ -80,7 +87,7 @@ class udp_receiver
 				}
 
 				socket_.async_receive_from(data_, sender_endpoint_,
-						boost::bind(&udp_receiver::handle_receive_from, this,
+						boost::bind(&UdpReceiver::handle_receive_from, this,
 							boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 			}
 			else
@@ -91,9 +98,7 @@ class udp_receiver
 
 		boost::asio::ip::udp::socket socket_;
 		boost::asio::ip::udp::endpoint sender_endpoint_;
-		unsigned last_message_id = 0;
-		unsigned lost_message_count = 0;
-		std::list< std::vector<boost::asio::mutable_buffer> > stored_data;
+		MessageList stored_data;
 		std::vector<boost::asio::mutable_buffer> data_;
 		boost::mutex mtx_;
 		create_buffer_fptr create_buffer_;

@@ -14,8 +14,8 @@
 class ProbSubObject : public FusionBase<pobj_msg>
 {
 	public:
-		ProbSubObject(ObjectDetector& d, string ip_address) 
-			: FusionBase<pobj_msg>(d, ip_address, create_buffer_fptr(boost::bind(&ProbObject::create_buffer, _1 ))),
+		ProbSubObject(ObjectDetector& d, unsigned robot_id, string ip_address) 
+			: FusionBase<pobj_msg>(d, robot_id, ip_address, create_buffer_fptr(boost::bind(&ProbObject::create_buffer, _1 ))),
 			image_tracker(num_images()) {}
 
 		virtual IReport detect(Mat& img_scene)
@@ -28,7 +28,7 @@ class ProbSubObject : public FusionBase<pobj_msg>
 				image_tracker[idx].update(processObject(scene, idx, local_matches));
 			}
 
-			std::list< std::vector<boost::asio::mutable_buffer> > neighbor_msgs;
+			UdpReceiver<pobj_msg>::MessageList neighbor_msgs;
 			receiver->async_receive_msgs(neighbor_msgs);
 			std::vector<double> likelihood = process_neighbor_msgs(neighbor_msgs);
 
@@ -81,12 +81,13 @@ class ProbSubObject : public FusionBase<pobj_msg>
 			return ir;
 		}
 
-		std::vector<double> process_neighbor_msgs(std::list< std::vector<boost::asio::mutable_buffer> >& neighbor_msgs)
+		std::vector<double> process_neighbor_msgs(UdpReceiver<pobj_msg>::MessageList& neighbor_msgs)
 		{
 			std::vector<double> likelihood(num_images());
 			//std::cout << "msgs received: " << neighbor_msgs.size() << std::endl;
-			for(std::vector<boost::asio::mutable_buffer>& msg : neighbor_msgs)
+			for(auto& data : neighbor_msgs)
 			{
+				std::vector<boost::asio::mutable_buffer>& msg = data.second;
 				pobj_msg* header = boost::asio::buffer_cast<pobj_msg*>(msg.front());
 				bool* body = boost::asio::buffer_cast<bool*>(msg.back());
 
@@ -115,10 +116,10 @@ class ProbSubObject : public FusionBase<pobj_msg>
 		std::vector<boost::asio::const_buffer> make_msg(std::vector<unsigned char>& objects)
 		{
 			pobj_msg* msg = new pobj_msg();
-			msg->message_id = 0;
-			msg->robot_id = 0;
+			msg->robot_id = robot_id_;
 			msg->num_objects = objects.size();
 			msg->size = sizeof(bool)*objects.size() + sizeof(pobj_msg);
+			msg->timestamp = returnTimestamp(); 
 			std::vector<boost::asio::const_buffer> buffer;
 			buffer.push_back(boost::asio::buffer(msg, sizeof(pobj_msg)));
 			buffer.push_back(boost::asio::buffer(objects));

@@ -13,19 +13,19 @@
 
 struct image_msg
 {
-	unsigned message_id;
 	unsigned robot_id;
 	int type;
 	int rows;
 	int cols;
 	unsigned size;
+	double timestamp;
 }; 
 
 class ImageSharing : public FusionBase<image_msg>
 {
 	public:
-		ImageSharing(ObjectDetector& d, string ip_address)
-			: FusionBase<image_msg>(d, ip_address, create_buffer_fptr(boost::bind(&ImageSharing::create_buffer, _1 ))),
+		ImageSharing(ObjectDetector& d, unsigned robot_id, string ip_address)
+			: FusionBase<image_msg>(d, robot_id, ip_address, create_buffer_fptr(boost::bind(&ImageSharing::create_buffer, _1 ))),
 			  object_tracker(num_objects()) {}
 
 		virtual IReport detect(Mat& img_scene)
@@ -38,7 +38,7 @@ class ImageSharing : public FusionBase<image_msg>
 				debugImage(scene, object_library().object_img_idx[idx], local_matches);
 			}
 
-			std::list< std::vector<boost::asio::mutable_buffer> > neighbor_msgs;
+			UdpReceiver<image_msg>::MessageList neighbor_msgs;
 			receiver->async_receive_msgs(neighbor_msgs);
 			std::vector<double> likelihood = process_neighbor_msgs(neighbor_msgs);
 
@@ -62,7 +62,6 @@ class ImageSharing : public FusionBase<image_msg>
 			for(unsigned idx = 0; idx < object_tracker.size(); ++idx)
 			{
 				double belief = object_tracker[idx].avg();
-				std::cout << "belief: " << belief << std::endl;
 				bool found = (belief >= THRESHOLD);
 				if(!found)
 				{
@@ -80,12 +79,13 @@ class ImageSharing : public FusionBase<image_msg>
 			return ir;
 		}
 
-		std::vector<double> process_neighbor_msgs(std::list< std::vector<boost::asio::mutable_buffer> >& neighbor_msgs)
+		std::vector<double> process_neighbor_msgs(UdpReceiver<image_msg>::MessageList& neighbor_msgs)
 		{
 			std::vector<double> likelihood(num_objects());
 			//std::cout << "msgs received: " << neighbor_msgs.size() << std::endl;
-			for(std::vector<boost::asio::mutable_buffer>& msg : neighbor_msgs)
+			for(auto& value : neighbor_msgs)
 			{
+				std::vector<boost::asio::mutable_buffer>& msg = value.second;
 				image_msg* header = boost::asio::buffer_cast<image_msg*>(msg.front());
 				unsigned char* body = boost::asio::buffer_cast<unsigned char*>(msg.back());
 
@@ -115,12 +115,12 @@ class ImageSharing : public FusionBase<image_msg>
 		std::vector<boost::asio::const_buffer> make_msg(int t, int r, int c, unsigned size, std::vector<unsigned char>& image)
 		{
 			image_msg* msg = new image_msg();
-			msg->message_id = 0;
-			msg->robot_id = 0;
+			msg->robot_id = robot_id_;
 			msg->type = t;
 			msg->rows = r;
 			msg->cols = c;
 			msg->size = size + sizeof(image_msg);
+			msg->timestamp = returnTimestamp(); 
 			std::vector<boost::asio::const_buffer> buffer;
 			buffer.push_back(boost::asio::buffer(msg, sizeof(image_msg)));
 			buffer.push_back(boost::asio::buffer(image));
@@ -128,7 +128,7 @@ class ImageSharing : public FusionBase<image_msg>
 		} 
 
 		const static unsigned BODY_SIZE = 66560; // 65 KB buffer
-		const unsigned MSG_RATE = 20;
+		const unsigned MSG_RATE = 10;
 		const double THRESHOLD = 0.75;
 		unsigned image_count_ = 0;
 		std::vector<Mavg> object_tracker;
