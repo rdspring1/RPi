@@ -46,6 +46,12 @@ class UdpReceiver
 			mtx_.unlock();
 		}
 
+		~UdpReceiver()
+		{
+			boost::system::error_code error;
+			socket_.close(error);
+		}
+
 	private:
 		void handle_receive_from(const boost::system::error_code& error, size_t bytes_recvd)
 		{

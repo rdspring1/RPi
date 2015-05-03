@@ -43,8 +43,13 @@ class UdpSender
 			++message_count_;
 		}
 
-	private:
+		~UdpSender()
+		{
+			boost::system::error_code error;
+			socket_.close(error);
+		}
 
+	private:
 		void handle_send_to(const boost::system::error_code& error, size_t bytes_transferred)
 		{
 			if (error)
@@ -52,12 +57,6 @@ class UdpSender
 				std::cout << "Failed to send message: " << error << std::endl;
 			}
 			std::cout << "Send Message: " << bytes_transferred << std::endl;
-		}
-
-		~UdpSender()
-		{
-			boost::system::error_code error;
-			socket_.close(error);
 		}
 
 	private:
