@@ -60,8 +60,6 @@ class ProbObject : public FusionBase<pobj_msg>
 
 				ir.objects.push_back(found);
 				ir.object_confidence.push_back(belief);
-				ir.images.push_back(found);
-				ir.image_confidence.push_back(belief);
 			}
 
 			// convert image into pobj_msg
@@ -102,7 +100,7 @@ class ProbObject : public FusionBase<pobj_msg>
 	private:
 		const static unsigned BODY_SIZE = 2; // Number of objects
 		const unsigned MSG_RATE = 5;
-		const double THRESHOLD = 0.75;
+		const double THRESHOLD = 0.50;
 		unsigned image_count_ = 0;
 		std::vector<Mavg> object_tracker;
 

@@ -73,8 +73,6 @@ class ImageSharing : public FusionBase<image_msg>
 
 				ir.objects.push_back(found);
 				ir.object_confidence.push_back(belief);
-				ir.images.push_back(found);
-				ir.image_confidence.push_back(belief);
 			}
 			return ir;
 		}
@@ -129,7 +127,7 @@ class ImageSharing : public FusionBase<image_msg>
 
 		const static unsigned BODY_SIZE = 66560; // 65 KB buffer
 		const unsigned MSG_RATE = 10;
-		const double THRESHOLD = 0.75;
+		const double THRESHOLD = 0.50;
 		unsigned image_count_ = 0;
 		std::vector<Mavg> object_tracker;
 };

@@ -142,7 +142,7 @@ class ISRelativeFeatures : public FusionBase<image_msg>
 
 		const static unsigned BODY_SIZE = 66560; // 65 KB buffer
 		const unsigned MSG_RATE = 20;
-		const double THRESHOLD = 0.75;
+		const double THRESHOLD = 0.50;
 		unsigned image_count_ = 0;
 		std::vector<Mavg> object_tracker;
 };

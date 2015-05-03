@@ -36,6 +36,6 @@ class Mavg
 	private:
 		std::list<bool> match_list;
 		unsigned match_count = 0;
-		const static unsigned DEFAULT_THRESHOLD = 12;
+		const static unsigned DEFAULT_THRESHOLD = 3;
 };
 #endif /* MAVG_H */

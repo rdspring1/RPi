@@ -77,7 +77,7 @@ class benchmark
 			for(unsigned idx = 0; idx < ib_.num_objects(); ++idx)
 			{
 				double obj_detect_rate = object_detected[idx] / (double) frame_count;
-				double obj_avg_confidence = object_detected[idx] / (double) frame_count;
+				double obj_avg_confidence = obj_confidence[idx] / (double) frame_count;
 				std::cout << ib_.obj_name(idx) << "- ODR: " << obj_detect_rate << " OAC: " << obj_avg_confidence << std::endl; 
 			}
 
@@ -86,7 +86,7 @@ class benchmark
 			for(unsigned idx = 0; idx < ib_.num_images(); ++idx)
 			{
 				double img_detect_rate = image_detected[idx] / (double) frame_count;
-				double img_avg_confidence = image_detected[idx] / (double) frame_count;
+				double img_avg_confidence = img_confidence[idx] / (double) frame_count;
 				std::cout << ib_.img_name(idx) << "- IDR: " << img_detect_rate << " IAC: " << img_avg_confidence << std::endl; 
 			}
 		}

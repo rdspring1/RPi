@@ -63,7 +63,7 @@ class ProbSubObject : public FusionBase<pobj_msg>
 				double belief = 0;
 				for(unsigned jdx = object_library().object_idx[idx]; jdx < LIMIT; ++jdx)
 				{
-					belief += ir.image_confidence[jdx];
+					belief += (double) ir.images[jdx];
 				}
 
 				//belief /= ((neighbor_msgs.size()+1) * SIZE);
@@ -109,7 +109,7 @@ class ProbSubObject : public FusionBase<pobj_msg>
 	private:
 		const static unsigned BODY_SIZE = 2; // Number of objects
 		const unsigned MSG_RATE = 5;
-		const double THRESHOLD = 0.75;
+		const double THRESHOLD = 0.50;
 		unsigned image_count_ = 0;
 		std::vector<Mavg> image_tracker;
 

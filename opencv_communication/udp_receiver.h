@@ -80,6 +80,7 @@ class UdpReceiver
 							std::swap(data_, new_data);
 							stored_data[new_header->robot_id] = std::move(new_data);
 						}
+						std::cout << "Recieve Message: " << bytes_recvd << std::endl;
 					}
 
 					// release
