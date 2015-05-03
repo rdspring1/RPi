@@ -44,13 +44,17 @@ int main( int argc, char** argv )
 	ObjectDetector d(detector, extractor, argv[1]);
 
 	// Information Fusion Algorithm
-	//BasicImageDetection* ib = new BasicImageDetection(d);
-	ImageSharing* ib = new ImageSharing(d, atoi(argv[2]), argv[3]);
-	//ProbObject* ib = new ProbObject(d, atoi(argv[2]), argv[3]);
-	//ProbSubObject* ib = new ProbSubObject(d, atoi(argv[2]), argv[3]);
+	BasicImageDetection* basic = new BasicImageDetection(d);
+	ImageSharing* is = new ImageSharing(d, atoi(argv[2]), argv[3]);
+	ProbObject* po = new ProbObject(d, atoi(argv[2]), argv[3]);
+	ProbSubObject* pso = new ProbSubObject(d, atoi(argv[2]), argv[3]);
 
-	benchmark b(cap, *ib, TEST_DURATION);	
-	b.run();
+	benchmark b1(cap, *is, TEST_DURATION);	
+	benchmark b2(cap, *po, TEST_DURATION);	
+	benchmark b3(cap, *pso, TEST_DURATION);	
+	b1.run();
+	b2.run();
+	b3.run();
 
 	return 0;
 }
