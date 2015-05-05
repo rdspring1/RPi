@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
-project (opencv_communication)
+project (rpi_fusion)
 
 set (CMAKE_CXX_FLAGS			"-Wall -g -O0 -std=c++11")
 
@@ -13,7 +13,8 @@ find_package( OpenCV REQUIRED )
 include_directories (${Boost_INCLUDE_DIRS})
 include_directories (${CMAKE_SOURCE_DIR})
 
-add_executable(rpi_fusion benchmark.cpp)
+file(GLOB PROJECT_SRC_FILES "*.cpp")
+add_executable(rpi_fusion ${PROJECT_SRC_FILES})
 
 target_link_libraries (rpi_fusion
 	${Boost_SYSTEM_LIBRARY}

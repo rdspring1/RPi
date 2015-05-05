@@ -1,15 +1,19 @@
+#include "benchmark.h"
 #include "object_library.h"
 #include "fps_avg.h"
 
 #include "basic_image_detection.h"
 #include "image_sharing.h"
 #include "prob_object.h"
+#include "prob_subobject.h"
 
 #include <iostream>
 #include <string>
 #include <exception>
+#include <stdlib.h> 
 
-const int POINTS = 3000;
+const long TEST_DURATION = 60;
+const int POINTS = 1500;
 const int WIDTH = 320;
 const int HEIGHT = 240;
 
@@ -17,9 +21,9 @@ const int HEIGHT = 240;
 int main( int argc, char** argv )
 {
 	// Collect Arguments
-	if( argc != 3 )
+	if( argc != 4 )
 	{ 
-		std::cout << " Usage: ./opencv_communication <object_folder> <ip_address>" << std::endl; 
+		std::cout << " Usage: ./opencv_communication <object_folder> <robot_id> <ip_address>" << std::endl; 
 		return -1; 
 	}
 
@@ -40,37 +44,25 @@ int main( int argc, char** argv )
 	ObjectDetector d(detector, extractor, argv[1]);
 
 	// Information Fusion Algorithm
-	//BasicImageDetection* ib = new BasicImageDetection(d);
-	ImageSharing* ib = new ImageSharing(d, argv[2]);
-	//ProbObject* ib = new ProbObject(d, argv[2]);
+	//BasicImageDetection* basic = new BasicImageDetection(d);
 
-	FpsAvg fps(5);
-	while(true)
 	{
-		Mat img_scene;
-		cap >> img_scene;
-		cvtColor(img_scene, img_scene, CV_RGB2GRAY, 1);
-
-		if( !img_scene.data )
-		{ 
-			std::cout<< " --(!) Error reading images " << std::endl; 
-			return -1; 
-		}
-
-		try
-		{
-			ib->detect(img_scene);
-			fps.update();
-		}
-		catch (std::exception ex)
-		{
-			std::cout << ex.what() << std::endl;
-		}
-
-		if(waitKey(50) >= 0)
-		{
-			break;
-		}
+		ImageSharing* is = new ImageSharing(d, atoi(argv[2]), argv[3]);
+		Benchmark b(cap, *is, TEST_DURATION);	
+		b.run();
+		delete is;
+	}
+	{
+		ProbObject* po = new ProbObject(d, atoi(argv[2]), argv[3]);
+		Benchmark b(cap, *po, TEST_DURATION);	
+		b.run();
+		delete po;
+	}
+	{
+		ProbSubObject* pso = new ProbSubObject(d, atoi(argv[2]), argv[3]);
+		Benchmark b(cap, *pso, TEST_DURATION);	
+		b.run();
+		delete pso;
 	}
 
 	return 0;

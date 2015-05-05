@@ -1,69 +1,80 @@
-#include "object_library.h"
-#include "fps_avg.h"
 #include "benchmark.h"
 
-#include "basic_image_detection.h"
-#include "image_sharing.h"
-#include "prob_object.h"
-#include "prob_subobject.h"
-
-#include <iostream>
-#include <string>
-#include <exception>
-#include <stdlib.h> 
-
-const long TEST_DURATION = 60;
-const int POINTS = 1500;
-const int WIDTH = 320;
-const int HEIGHT = 240;
-
-/** @function main */
-int main( int argc, char** argv )
+void Benchmark::run()
 {
-	// Collect Arguments
-	if( argc != 4 )
-	{ 
-		std::cout << " Usage: ./opencv_communication <object_folder> <robot_id> <ip_address>" << std::endl; 
-		return -1; 
-	}
-
-	// Construct OpenCV video camera interface
-	VideoCapture cap(0);
-	if(!cap.isOpened())
+	FpsAvg fps(duration_);
+	start_timer();
+	while(run_status_)
 	{
-		std::cout << "Cannot open video camera" << std::endl;
-		return 1;
+		Mat img_scene;
+		cap_ >> img_scene;
+		cvtColor(img_scene, img_scene, CV_RGB2GRAY, 1);
+
+		if( !img_scene.data )
+		{ 
+			throw std::runtime_error("Error Reading Image"); 
+		}
+
+		try
+		{
+			update( ib_.detect(img_scene) );
+			fps.update();
+		}
+		catch (std::exception ex)
+		{
+			std::cout << ex.what() << std::endl;
+		}
+
+		if(waitKey(50) >= 0)
+		{
+			break;
+		}
 	}
-	cap.set(CV_CAP_PROP_FRAME_WIDTH, WIDTH);
-	cap.set(CV_CAP_PROP_FRAME_HEIGHT, HEIGHT);
+	report(fps.frame_count());
+}
 
-	ORB detector(POINTS);
-	ORB extractor(POINTS);
-
-	// Detection Algorithm
-	ObjectDetector d(detector, extractor, argv[1]);
-
-	// Information Fusion Algorithm
-	//BasicImageDetection* basic = new BasicImageDetection(d);
-
+void Benchmark::update(IReport&& ir)
+{
+	for(unsigned idx = 0; idx < ir.objects.size(); ++idx)
 	{
-		ImageSharing* is = new ImageSharing(d, atoi(argv[2]), argv[3]);
-		benchmark b(cap, *is, TEST_DURATION);	
-		b.run();
-		delete is;
-	}
-	{
-		ProbObject* po = new ProbObject(d, atoi(argv[2]), argv[3]);
-		benchmark b(cap, *po, TEST_DURATION);	
-		b.run();
-		delete po;
-	}
-	{
-		ProbSubObject* pso = new ProbSubObject(d, atoi(argv[2]), argv[3]);
-		benchmark b(cap, *pso, TEST_DURATION);	
-		b.run();
-		delete pso;
+		object_detected[idx] += (double) ir.objects[idx];	
+		obj_confidence[idx] += ir.object_confidence[idx];
 	}
 
-	return 0;
+	for(unsigned idx = 0; idx < ir.images.size(); ++idx)
+	{
+		image_detected[idx] += (double) ir.images[idx];	
+		img_confidence[idx] += ir.image_confidence[idx];
+	}
+}
+
+void Benchmark::report(long frame_count)
+{
+	std::cout << std::endl;
+	for(unsigned idx = 0; idx < ib_.num_objects(); ++idx)
+	{
+		double obj_detect_rate = object_detected[idx] / (double) frame_count;
+		double obj_avg_confidence = obj_confidence[idx] / (double) frame_count;
+		std::cout << ib_.obj_name(idx) << "- ODR: " << obj_detect_rate << " OAC: " << obj_avg_confidence << std::endl; 
+	}
+
+	std::cout << std::endl;
+
+	for(unsigned idx = 0; idx < ib_.num_images(); ++idx)
+	{
+		double img_detect_rate = image_detected[idx] / (double) frame_count;
+		double img_avg_confidence = img_confidence[idx] / (double) frame_count;
+		std::cout << ib_.img_name(idx) << "- IDR: " << img_detect_rate << " IAC: " << img_avg_confidence << std::endl; 
+	}
+}
+
+void Benchmark::start_timer()
+{
+	timer_.async_wait(boost::bind(&Benchmark::PostRun, this, boost::asio::placeholders::error));
+	asio_timer_ = new boost::thread(boost::bind(&boost::asio::io_service::run, &ios_timer_));
+}
+
+void Benchmark::PostRun(const boost::system::error_code& error)
+{
+	run_status_ = false;
 }
