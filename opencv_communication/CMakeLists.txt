@@ -10,6 +10,7 @@ find_package(Boost 1.49.0 COMPONENTS system thread filesystem REQUIRED)
 
 find_package( OpenCV REQUIRED )
 
+include_directories("${PROJECT_SOURCE_DIR}/include")
 include_directories (${Boost_INCLUDE_DIRS})
 include_directories (${CMAKE_SOURCE_DIR})
 
