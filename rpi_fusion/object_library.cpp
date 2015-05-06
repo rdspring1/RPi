@@ -34,6 +34,12 @@ void ObjectLibrary::processFolder(const char* filepath)
 				object_idx.push_back(images.size());
 				object_names.push_back(iter->path().filename().generic_string());
 				//std::cout << "Object: " <<  object_names.back() << " " << object_idx.back() << std::endl;
+
+				// Handle Symlink Directories
+				if(is_symlink(iter->path()))
+				{
+					iter = recursive_directory_iterator(canonical(read_symlink(iter->path()), library_path));
+				}
 			}
 			else
 			{

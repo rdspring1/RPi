@@ -37,6 +37,7 @@ class ObjectDetector
 		}
 
 		bool processObject(ImageData& scene, unsigned object_idx, std::vector<DMatch>& good_matches);
+		std::vector<size_t> computeHomography(std::vector<Point2f>& mpts_1, std::vector<Point2f>& mpts_2, const size_t threshold);
 		void debugImage(std::string name, ImageData& scene, unsigned object_idx, std::vector<DMatch>& good_matches);
 
 		ObjectLibrary lib_;

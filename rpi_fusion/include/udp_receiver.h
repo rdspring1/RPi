@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <stdexcept>
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
@@ -86,7 +87,10 @@ class UdpReceiver
 							std::swap(data_, new_data);
 							stored_data[new_header->robot_id] = std::move(new_data);
 						}
-						std::cout << "Recieve Message: " << bytes_recvd << std::endl;
+					}
+					else
+					{
+						throw std::runtime_error("Failed to receive message: " + bytes_recvd);
 					}
 
 					// release
@@ -99,7 +103,7 @@ class UdpReceiver
 			}
 			else
 			{
-				std::cout << error << std::endl;
+				throw std::runtime_error(error.message());
 			}
 		}
 

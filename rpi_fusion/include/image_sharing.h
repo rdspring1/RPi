@@ -24,17 +24,14 @@ struct image_msg
 class ImageSharing : public FusionBase<image_msg>
 {
 	public:
-		ImageSharing(ObjectDetector& d, unsigned robot_id, string ip_address)
-			: FusionBase<image_msg>(d, robot_id, ip_address, create_buffer_fptr(boost::bind(&ImageSharing::create_buffer, _1 ))),
+		ImageSharing(ObjectDetector& d, unsigned id, string ip)
+			: FusionBase<image_msg>(d, id, ip, create_buffer_fptr(boost::bind(&ImageSharing::create_buffer, _1 ))),
 			  object_tracker(num_objects()) {}
 
 		virtual IReport detect(Mat& img_scene);
-
-		std::vector<double> process_neighbor_msgs(UdpReceiver<image_msg>::MessageList& neighbor_msgs);
-
-		static void create_buffer(std::vector<boost::asio::mutable_buffer>& data);
-
 	private:
+		static void create_buffer(std::vector<boost::asio::mutable_buffer>& data);
+		std::vector<double> process_neighbor_msgs(UdpReceiver<image_msg>::MessageList& neighbor_msgs);
 		std::vector<boost::asio::const_buffer> make_msg(int t, int r, int c, unsigned size, std::vector<unsigned char>& image);
 
 		const static unsigned BODY_SIZE = 66560; // 65 KB buffer

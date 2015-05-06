@@ -8,7 +8,7 @@ bool ObjectDetector::processObject(ImageData& scene, unsigned object_idx, std::v
 
 	Mat results;
 	Mat dists;
-	std::vector<std::vector<cv::DMatch> > matches;
+	std::vector< std::vector<cv::DMatch> > matches;
 	if(descriptors_object.type() == CV_8U)
 	{
 		// Binary Descriptors - ORB
@@ -41,10 +41,28 @@ bool ObjectDetector::processObject(ImageData& scene, unsigned object_idx, std::v
 		}
 	}
 
+	std::vector<size_t> inliers = computeHomography(mpts_1, mpts_2, MIN_MATCH_COUNT);
+	for(size_t& idx : inliers)
+	{
+		good_matches.push_back(matches.at(pt_index[idx]).at(0));
+	}
+
+	if(inliers.size() >= MIN_MATCH_COUNT)
+	{
+		//std::cout << "INLIERS: "  << inliers << " OUTLIERS: " << outliers << std::endl;
+		return true;
+	}
+	return false;
+}
+
+std::vector<size_t> ObjectDetector::computeHomography(std::vector<Point2f>& mpts_1, 
+		std::vector<Point2f>& mpts_2, const size_t threshold)
+{
 	unsigned inliers = 0;
 	unsigned outliers = 0;
 	std::vector<uchar> outlier_mask;
-	if(pt_index.size() >= MIN_MATCH_COUNT)
+	std::vector<size_t> good_matches;
+	if(mpts_1.size() >= threshold)
 	{
 		cv::Mat H = findHomography(mpts_1,
 				mpts_2,
@@ -52,26 +70,20 @@ bool ObjectDetector::processObject(ImageData& scene, unsigned object_idx, std::v
 				1.0,
 				outlier_mask);
 
-		for(unsigned int idx = 0; idx < mpts_1.size(); ++idx)
+		for(size_t idx = 0; idx < mpts_1.size(); ++idx)
 		{
 			if(outlier_mask.at(idx))
 			{
 				++inliers;
-				good_matches.push_back(matches.at(pt_index[idx]).at(0));
+				good_matches.push_back(idx);
 			}
 			else
 			{
 				++outliers;
 			}
 		}
-
-		if(inliers >= MIN_MATCH_COUNT)
-		{
-			//std::cout << "INLIERS: "  << inliers << " OUTLIERS: " << outliers << std::endl;
-			return true;
-		}
 	}
-	return false;
+	return good_matches;
 }
 
 void ObjectDetector::debugImage(std::string name, ImageData& scene, unsigned object_idx, std::vector<DMatch>& good_matches)

@@ -14,14 +14,13 @@ IReport ImageSharing::detect(Mat& img_scene)
 	receiver->async_receive_msgs(neighbor_msgs);
 	std::vector<double> likelihood = process_neighbor_msgs(neighbor_msgs);
 
+	// send image to neighbors
 	// convert image into image_msg
 	if(!(image_count_ % MSG_RATE))
 	{
 		std::vector<unsigned char> outImg;
 		cv::imencode(PNG, img_scene, outImg);
-		// send image to neighbors
 		sender->async_send_msg(make_msg(img_scene.type(), img_scene.rows, img_scene.cols, outImg.size(), outImg));
-
 		//std::cout << "Image Size: " << sizeof(img_scene.data) * img_scene.rows * img_scene.cols << std::endl;
 		//std::cout << "Compressed Image Size: " << outImg.size() << std::endl;
 	}
@@ -62,6 +61,7 @@ std::vector<double> ImageSharing::process_neighbor_msgs(UdpReceiver<image_msg>::
 		// Convert image_msg back into image
 		cv::Mat img_buf = cv::Mat(header->rows, header->cols, header->type, body);
 		cv::Mat neighbor_image = cv::imdecode(img_buf, CV_LOAD_IMAGE_GRAYSCALE);
+		//cv::imshow("neighbor", neighbor_image);
 
 		// Process neighbor image
 		// Increment found counter if object is successfully detected

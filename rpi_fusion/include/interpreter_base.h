@@ -50,7 +50,7 @@ class InterpreterBase
 			return d_.lib_.images.at(idx).name;
 		}
 
-		ImageData& img(unsigned idx)
+		ImageData& img_data(unsigned idx)
 		{
 			return d_.lib_.images.at(idx);
 		}
@@ -70,6 +70,11 @@ class InterpreterBase
 			return d_.processObject(scene, idx, good_matches);
 		}
 
+		std::vector<size_t> computeHomography(std::vector<Point2f>& mpts_1, std::vector<Point2f>& mpts_2, const size_t threshold)
+		{
+			return d_.computeHomography(mpts_1, mpts_2, threshold);
+		}
+
 		void debugImage(ImageData& scene, unsigned idx, std::vector< DMatch >& good_matches)
 		{
 			d_.debugImage(img_name(idx), scene, idx, good_matches);
@@ -81,6 +86,8 @@ class InterpreterBase
 			time(&current_time);
 			return difftime(current_time, basetime);
 		}
+
+		virtual ~InterpreterBase() {}
 	private:
 		ObjectDetector& d_;
 		time_t basetime;

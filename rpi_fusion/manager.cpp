@@ -6,6 +6,7 @@
 #include "image_sharing.h"
 #include "prob_object.h"
 #include "prob_subobject.h"
+#include "is_relative_features.h"
 
 #include <iostream>
 #include <string>
@@ -23,7 +24,7 @@ int main( int argc, char** argv )
 	// Collect Arguments
 	if( argc != 4 )
 	{ 
-		std::cout << " Usage: ./opencv_communication <object_folder> <robot_id> <ip_address>" << std::endl; 
+		std::cout << " Usage: ./rpi_fusion <object_folder> <robot_id> <ip_address>" << std::endl; 
 		return -1; 
 	}
 
@@ -44,25 +45,41 @@ int main( int argc, char** argv )
 	ObjectDetector d(detector, extractor, argv[1]);
 
 	// Information Fusion Algorithm
-	//BasicImageDetection* basic = new BasicImageDetection(d);
-
+	/*
+	   BasicImageDetection* basic = new BasicImageDetection(d);
+	   Benchmark b(cap, *basic, TEST_DURATION);
+	   b.run();
+	   delete basic;
+	 */
+	/*
+	   {
+	   ImageSharing* is = new ImageSharing(d, atoi(argv[2]), argv[3]);
+	   Benchmark b(cap, *is, TEST_DURATION);	
+	   b.run();
+	   delete is;
+	   }
+	 */
+	/*
+	   {
+	   ProbObject* po = new ProbObject(d, atoi(argv[2]), argv[3]);
+	   Benchmark b(cap, *po, TEST_DURATION);	
+	   b.run();
+	   delete po;
+	   }
+	 */
+	/*
+	   {
+	   ProbSubObject* pso = new ProbSubObject(d, atoi(argv[2]), argv[3]);
+	   Benchmark b(cap, *pso, TEST_DURATION);	
+	   b.run();
+	   delete pso;
+	   }
+	 */
 	{
-		ImageSharing* is = new ImageSharing(d, atoi(argv[2]), argv[3]);
-		Benchmark b(cap, *is, TEST_DURATION);	
+		ISRelativeFeatures* isrf = new ISRelativeFeatures(d, atoi(argv[2]), argv[3]);
+		Benchmark b(cap, *isrf, TEST_DURATION);
 		b.run();
-		delete is;
-	}
-	{
-		ProbObject* po = new ProbObject(d, atoi(argv[2]), argv[3]);
-		Benchmark b(cap, *po, TEST_DURATION);	
-		b.run();
-		delete po;
-	}
-	{
-		ProbSubObject* pso = new ProbSubObject(d, atoi(argv[2]), argv[3]);
-		Benchmark b(cap, *pso, TEST_DURATION);	
-		b.run();
-		delete pso;
+		delete isrf;
 	}
 
 	return 0;

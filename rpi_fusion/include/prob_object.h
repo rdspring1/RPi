@@ -23,15 +23,14 @@ struct pobj_msg
 class ProbObject : public FusionBase<pobj_msg>
 {
 	public:
-		ProbObject(ObjectDetector& d, unsigned robot_id, string ip_address) 
-			: FusionBase<pobj_msg>(d, robot_id, ip_address, create_buffer_fptr(boost::bind(&ProbObject::create_buffer, this, _1 ))),
+		ProbObject(ObjectDetector& d, unsigned id, string ip) 
+			: FusionBase<pobj_msg>(d, id, ip, create_buffer_fptr(boost::bind(&ProbObject::create_buffer, this, _1 ))),
 			object_tracker(num_objects()) {}
 
 		virtual IReport detect(Mat& img_scene);
+	private:
 		std::vector<double> process_neighbor_msgs(UdpReceiver<pobj_msg>::MessageList neighbor_msgs);
 		void create_buffer(std::vector<boost::asio::mutable_buffer>& data);
-
-	private:
 		std::vector<boost::asio::const_buffer> make_msg(std::vector<unsigned char>& objects);
 
 		const unsigned MSG_RATE = 5;
