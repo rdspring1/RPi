@@ -57,7 +57,7 @@ class UdpReceiver
 		{
 			if (!error)
 			{
-				//std::cout << "Initial: " << bytes_recvd << " Header: " << sizeof(T) << std::endl;
+				//std::cout << "Total: " << bytes_recvd << " Header: " << sizeof(T) << std::endl;
 				if(bytes_recvd >= sizeof(T))
 				{
 					// lock

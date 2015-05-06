@@ -68,7 +68,7 @@ std::vector<double> ProbObject::process_neighbor_msgs(UdpReceiver<pobj_msg>::Mes
 void ProbObject::create_buffer(std::vector<boost::asio::mutable_buffer>& data)
 {
 	data.push_back(boost::asio::buffer((pobj_msg*) malloc(sizeof(pobj_msg)), sizeof(pobj_msg)));
-	data.push_back(boost::asio::buffer((unsigned char*) malloc(BODY_SIZE), BODY_SIZE));
+	data.push_back(boost::asio::buffer((unsigned char*) malloc(num_objects()), num_objects()));
 }
 
 std::vector<boost::asio::const_buffer> ProbObject::make_msg(std::vector<unsigned char>& objects)
