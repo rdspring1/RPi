@@ -111,7 +111,17 @@ void ISRelativeFeatures::process_neighbor_msg(const ImageData& obj, const ImageD
 		const cv::Point2f& local_scene_pt = local_scene.keypoints.at(local_match.trainIdx).pt; 
 		cv::Point2f BA_pt = local_scene_pt + diff;
 
-		// TODO Out of Bounds Check - BA_pt
+		// Out of Bounds Check for relative mapping point - BA_pt
+		std::vector<bool> outBounds(4);
+		outBounds[0] = (BA_pt.x < 0);
+		outBounds[1] = (BA_pt.y < 0);
+		outBounds[3] = (BA_pt.x >= local_scene.image.cols);
+		outBounds[2] = (BA_pt.y >= local_scene.image.rows);
+		if(std::count(outBounds.begin(), outBounds.end(), true) > 0)
+		{
+			continue;
+		}
+
 		// Find nearest keypoint in local scene other than local scene point (B -> A)
 		int BA_scene_idx = 0;
 		{
