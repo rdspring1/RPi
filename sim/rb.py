@@ -76,10 +76,10 @@ def run_game(width, height, fps, starting_scene):
 
 # Game Engine
 class RobotScene(SceneBase):
-     def __init__(self, numRobots, updater):
+     def __init__(self, updater):
           SceneBase.__init__(self)
 
-          self.robots = rbutils.initRobots(numRobots)
+          self.robots = None
           self.updater = updater
           self.isPrinting = False
           self.curFile = ''
@@ -126,7 +126,6 @@ class RobotScene(SceneBase):
           lineWidth = 1
 
           screen.fill(egg)
-          #pygame.draw.aaline(screen, black, (newx, newy), (ox, oy), lineWidth)
 
           #draw robots
           for rob in self.robots:
@@ -139,19 +138,31 @@ class RobotScene(SceneBase):
           for obj in self.objects:
                pygame.gfxdraw.box(screen, obj.rect, obj.color)
 
+          #draw cliques
+          [cliques, edgeset] = rbutils.findCliques(self. objects, self.robots, screen.get_width(), screen.get_height())
+          #draw connections
+          for edge in edgeset:
+               pygame.draw.aaline(screen, black, edge[0], edge[1], lineWidth)
+
           caption = 'Simulator'
           if self.isPrinting:
                caption += ' (Printing to file)'
           pygame.display.set_caption(caption)
 
+          #TODO calculate entropy
+          #TODO take screenshot with timestamp and entropy in title
+
+width = 360
+height = 360
 
 aqua = (0, 140, 255)
 mint = (120, 210, 170)
 purple = (215, 40, 215)
 
 #randomStep is run by default
-scene = RobotScene(20, rbutils.updateState)
+scene = RobotScene(rbutils.updateState)
 scene.addObject(objects.Object('A', aqua, 100, 100, 50, 50))
 scene.addObject(objects.Object('B', mint, 200, 200, 100, 50))
 scene.addObject(objects.Object('C', purple, 50, 250, 50, 75))
-run_game(360, 360, 60, scene)
+scene.robots = rbutils.initRobots(scene.objects, width, height, 100)
+run_game(width, height, 60, scene)

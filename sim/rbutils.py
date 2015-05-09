@@ -29,11 +29,21 @@ class Robot:
           return pygame.Rect(x, y, self.sensor, self.sensor)
 
 #returns list of "num" random robots
-def initRobots(num):
+def initRobots(objects, width, height, num):
      red = (215, 40, 60)
      rlist = []
-     for i in range(num):
-          rlist += [Robot(i, random.random(), random.random(), red)]
+     i = 0
+     while i < num:
+          pos = [random.random(), random.random()]
+          real_pos = (pos[0] * width, pos[1] * height)
+          add = True
+          for obj in objects:
+               if obj.rect.collidepoint(real_pos):
+                    add = False
+                    break
+          if add:
+               rlist += [Robot(i, pos[0], pos[1], red)]
+               i += 1
      return rlist
 
 #prints particular robot information
@@ -86,6 +96,37 @@ def addNoise(rob, speed, nval):
 def updateState(objects, rlist, width, height, xlo, xhi, ylo, yhi):
      randomStep(objects, rlist, width, height, xlo, xhi, ylo, yhi)
      detectObjects(objects, rlist, width, height)
+
+def findCliques(objects, rlist, width, height, commrange = 50):
+     objset = {}
+     for obj in objects:
+          objset[obj.name] = []
+          for rob in rlist:
+               if obj.name in rob.objectlist:
+                    objset[obj.name].append(rob)
+
+     cliques = dict.fromkeys(objset.keys())
+     edgeset = []
+     for key in objset.iterkeys():
+         cliques[key] = []
+         for rob in objset[key]:
+             if not cliques[key]:
+                  cliques[key].append([rob])
+             else:
+                  updateClique(key, cliques, edgeset, rob, width, height, commrange)
+     return [cliques, edgeset]
+
+def updateClique(key, cliques, edgeset, rob, width, height, commrange):
+     rpos = ((rob.pos[0] * width), (rob.pos[1] * height))
+     for clique in cliques[key]:
+          for c in clique:
+               cpos = ((c.pos[0] * width), (c.pos[1] * height))
+               dist = numpy.linalg.norm(numpy.array(rpos) - numpy.array(cpos))
+               if dist <= commrange:
+                    clique.append(rob)
+                    edgeset.append((cpos, rpos))
+                    return
+     cliques[key].append([rob])
 
 #determine which objects each robot sees
 def detectObjects(objects, rlist, width, height):
