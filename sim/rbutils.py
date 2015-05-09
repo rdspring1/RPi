@@ -1,27 +1,39 @@
+import pygame
 import random
 import numpy
 
 #contains class information for individual robots
 class Robot:
-     def __init__(self, rid, x, y, tally = 50, maxSpeed = 0.005, noise = 0.5, visibility = 0.15):
+     def __init__(self, rid, x, y, color, sensor = 50, tally = 50, maxSpeed = 0.005, noise = 0.5, visibility = 0.15):
           self.rid = rid
           self.pos = [x, y]
           self.vel = [0, 0]
+          self.sensor = sensor
           self.visibility = visibility
           self.maxSpeed = maxSpeed
           self.noise = noise
           self.tally = tally
           self.rate = 0
           self.unit_dist = (2)**(1.0/2)
+          self.color = color
+          self.default_color = color
+          self.objectlist = []
 
      def randomizePosition(self):
           self.pos = [random.random(), random.random()]
 
+     def sensorArea(self, width, height):
+          offset = self.sensor / 2.0
+          x = self.pos[0] * width - offset
+          y = self.pos[1] * height - offset
+          return pygame.Rect(x, y, self.sensor, self.sensor)
+
 #returns list of "num" random robots
 def initRobots(num):
+     red = (215, 40, 60)
      rlist = []
      for i in range(num):
-          rlist += [Robot(i, random.random(), random.random())]
+          rlist += [Robot(i, random.random(), random.random(), red)]
      return rlist
 
 #prints particular robot information
@@ -69,6 +81,22 @@ def changeVis(rlist, d):
 def addNoise(rob, speed, nval):
      rob.pos[0] += (2 * random.random() - 1) * speed * nval
      rob.pos[1] += (2 * random.random() - 1) * speed * nval
+
+#robot update function
+def updateState(objects, rlist, width, height, xlo, xhi, ylo, yhi):
+     randomStep(objects, rlist, width, height, xlo, xhi, ylo, yhi)
+     detectObjects(objects, rlist, width, height)
+
+#determine which objects each robot sees
+def detectObjects(objects, rlist, width, height):
+     for rob in rlist:
+          del rob.objectlist[:]
+          sensorArea = rob.sensorArea(width, height)
+          rob.color = rob.default_color
+          for obj in objects:
+               if obj.rect.colliderect(sensorArea):
+                    rob.objectlist.append(obj.name)
+                    rob.color = obj.color
 
 #moves robots in rlist uniformly randomly within bounded box
 def randomStep(objects, rlist, width, height, xlo, xhi, ylo, yhi):

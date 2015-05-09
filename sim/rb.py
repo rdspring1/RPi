@@ -118,11 +118,8 @@ class RobotScene(SceneBase):
                rbutils.printState(self.curFile,self.robots)
 
      def Render(self, screen):
-          red = (215, 40, 60)
-          aqua = (0, 140, 255)
-          mint = (120, 210, 170)
-          egg = (225, 235, 215)
           black = (0, 0, 0)
+          egg = (225, 235, 215)
 
           robRadius = 4
           goalRadius = 6
@@ -132,15 +129,15 @@ class RobotScene(SceneBase):
           #pygame.draw.aaline(screen, black, (newx, newy), (ox, oy), lineWidth)
 
           #draw robots
-          for rr in self.robots:
-               newx = int(rr.pos[0] * screen.get_width())
-               newy = int(rr.pos[1] * screen.get_height())
+          for rob in self.robots:
+               newx = int(rob.pos[0] * screen.get_width())
+               newy = int(rob.pos[1] * screen.get_height())
                pygame.gfxdraw.aacircle(screen, newx, newy, robRadius, black)
-               pygame.gfxdraw.filled_circle(screen, newx, newy, robRadius, red)
+               pygame.gfxdraw.filled_circle(screen, newx, newy, robRadius, rob.color)
 
           #draw objects
           for obj in self.objects:
-               pygame.gfxdraw.box(screen, obj.rect, aqua)
+               pygame.gfxdraw.box(screen, obj.rect, obj.color)
 
           caption = 'Simulator'
           if self.isPrinting:
@@ -148,9 +145,13 @@ class RobotScene(SceneBase):
           pygame.display.set_caption(caption)
 
 
+aqua = (0, 140, 255)
+mint = (120, 210, 170)
+purple = (215, 40, 215)
+
 #randomStep is run by default
-scene = RobotScene(20, rbutils.randomStep)
-scene.addObject(objects.Object('A', 100, 100, 50, 50))
-scene.addObject(objects.Object('B', 200, 200, 100, 50))
-scene.addObject(objects.Object('C', 50, 250, 50, 75))
+scene = RobotScene(20, rbutils.updateState)
+scene.addObject(objects.Object('A', aqua, 100, 100, 50, 50))
+scene.addObject(objects.Object('B', mint, 200, 200, 100, 50))
+scene.addObject(objects.Object('C', purple, 50, 250, 50, 75))
 run_game(360, 360, 60, scene)
