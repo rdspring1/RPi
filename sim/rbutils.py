@@ -109,24 +109,24 @@ def findCliques(objects, rlist, width, height, commrange = 50):
      edgeset = []
      for key in objset.iterkeys():
          cliques[key] = []
-         for rob in objset[key]:
-             if not cliques[key]:
-                  cliques[key].append([rob])
-             else:
-                  updateClique(key, cliques, edgeset, rob, width, height, commrange)
-     return [cliques, edgeset]
+         while objset[key]:
+              cliques[key].append([objset[key].pop()])
+              clique = cliques[key][len(cliques[key])-1]
+              added = True
 
-def updateClique(key, cliques, edgeset, rob, width, height, commrange):
-     rpos = ((rob.pos[0] * width), (rob.pos[1] * height))
-     for clique in cliques[key]:
-          for c in clique:
-               cpos = ((c.pos[0] * width), (c.pos[1] * height))
-               dist = numpy.linalg.norm(numpy.array(rpos) - numpy.array(cpos))
-               if dist <= commrange:
-                    clique.append(rob)
-                    edgeset.append((cpos, rpos))
-                    return
-     cliques[key].append([rob])
+              while added:
+                   added = False
+                   for rob in clique:
+                        rpos = ((rob.pos[0] * width), (rob.pos[1] * height))
+                        for c in objset[key]:
+                             cpos = ((c.pos[0] * width), (c.pos[1] * height))
+                             dist = numpy.linalg.norm(numpy.array(rpos) - numpy.array(cpos))
+                             if dist <= commrange:
+                                  objset[key].remove(c)
+                                  clique.append(c)
+                                  edgeset.append((cpos, rpos))
+                                  added = True
+     return [cliques, edgeset]
 
 #determine which objects each robot sees
 def detectObjects(objects, rlist, width, height):
