@@ -1,0 +1,33 @@
+Author: Ryan Lear
+Last modified: May 8, 2015
+
+The program rb.py creates two randomly placed sets of robots and runs based on a supplied updater. Currently included are three updaters. The first is a random walk, where each robot picks a random direction and moves in that direction. The second is resource collection, in which each robot moves to a series of goals. As currently implemented, the goals are hard coded. The third is a simple form of dispersion, where each robot tries to move away from the centroid of its neighbors.
+
+Adding a new behavior for the red robots requires adding a method to rbutils.py which accepts the variables (rlist, xlo, xhi, ylo, yhi). "rlist" refers to the robots to update, and the next four are upper and lower bounds for the robots. By default, the bounds are from 0 to 1 for each axis.
+
+Once a behavior has been created, change the function at the end of rb.py (run_game) to match the added behavior. There are other attributes that can be added as well if needed.
+
+Controls for the program are all keyboard commands.
+Exit using Alt + Esc or Alt + F4 (or the exit button).
+"Space" pauses/unpauses the program.
+"Enter" resets the robot positions.
+"R" toggles the visibility graph from blue to red robots.
+"B" toggles the visibility graph from blue to blue robots.
+"Up" increases visibility for the blue robots.
+"Down" decreases visibility for the blue robots.
+"Left" increases visibility for the red robots.
+"Right" decreases visibility for the red robots.
+"O" toggles printing to file. **WARNING: These files get BIG very quickly**
+
+File is named "[updater name][date created]"
+File is formated
+"[updater name],[num red],[num blue]
+[red
+id,x,y,vis,maxspeed
+[num red neighbors],[list of red neighbors id]
+[num blue neighbors],[list of blue neighbors id]
+blue
+id,x,y,vis,maxspeed
+[num red neighbors],[list of red neighbors id]
+[num blue neighbors],[list of blue neighbors id]] (repeating at each time step)"
+
