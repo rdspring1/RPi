@@ -71,8 +71,15 @@ def addNoise(rob, speed, nval):
      rob.pos[1] += (2 * random.random() - 1) * speed * nval
 
 #moves robots in rlist uniformly randomly within bounded box
-def randomStep(rlist, xlo, xhi, ylo, yhi):
+def randomStep(objects, rlist, width, height, xlo, xhi, ylo, yhi):
      for rob in rlist:
+          # check object collision
+          for obj in objects:
+               if obj.rect.collidepoint(rob.pos[0]*width, rob.pos[1]*height):
+                    rob.vel[0] *= -1.0
+                    rob.vel[1] *= -1.0
+                    rob.rate = 0
+
           # change motion direction randomly
           if rob.rate == rob.tally:
                rob.rate = 0

@@ -8,6 +8,7 @@ import random
 import os
 import datetime
 import rbutils
+import objects
 
 class SceneBase:
      def __init__(self):
@@ -16,7 +17,7 @@ class SceneBase:
      def ProcessInput(self, events, pressed_keys):
           raise RuntimeError("uh-oh, you didn't override this in the child class")
 
-     def Update(self):
+     def Update(self, width, height):
           raise RuntimeError("uh-oh, you didn't override this in the child class")
 
      def Render(self, screen):
@@ -65,7 +66,7 @@ def run_game(width, height, fps, starting_scene):
 
           active_scene.ProcessInput(filtered_events, pressed_keys)
           if not paused:
-               active_scene.Update()
+               active_scene.Update(screen.get_width(), screen.get_height())
           active_scene.Render(screen)
 
           active_scene = active_scene.next
@@ -82,6 +83,10 @@ class RobotScene(SceneBase):
           self.updater = updater
           self.isPrinting = False
           self.curFile = ''
+          self.objects = []
+
+     def addObject(self, obj):
+         self.objects.append(obj)
 
      def ProcessInput(self, events, pressed_keys):
           for event in events:
@@ -107,8 +112,8 @@ class RobotScene(SceneBase):
                          self.updater = rbutils.randomStep
                          self.isPrinting = False
 
-     def Update(self):
-          self.updater(self.robots, 0, 1, 0, 1)
+     def Update(self, width, height):
+          self.updater(self.objects, self.robots, width, height, 0, 1, 0, 1)
           if self.isPrinting:
                rbutils.printState(self.curFile,self.robots)
 
@@ -133,6 +138,10 @@ class RobotScene(SceneBase):
                pygame.gfxdraw.aacircle(screen, newx, newy, robRadius, black)
                pygame.gfxdraw.filled_circle(screen, newx, newy, robRadius, red)
 
+          #draw objects
+          for obj in self.objects:
+               pygame.gfxdraw.box(screen, obj.rect, aqua)
+
           caption = 'Simulator'
           if self.isPrinting:
                caption += ' (Printing to file)'
@@ -140,4 +149,8 @@ class RobotScene(SceneBase):
 
 
 #randomStep is run by default
-run_game(360, 360, 60, RobotScene(10, rbutils.randomStep))
+scene = RobotScene(20, rbutils.randomStep)
+scene.addObject(objects.Object('A', 100, 100, 50, 50))
+scene.addObject(objects.Object('B', 200, 200, 100, 50))
+scene.addObject(objects.Object('C', 50, 250, 50, 75))
+run_game(360, 360, 60, scene)
