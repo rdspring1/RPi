@@ -126,6 +126,7 @@ def findCliques(objects, rlist, width, height, commrange = 50):
                                   clique.append(c)
                                   edgeset.append((cpos, rpos))
                                   added = True
+              #print key + str(len(cliques[key])) + "-" + str(len(clique))
      return [cliques, edgeset]
 
 #determine which objects each robot sees

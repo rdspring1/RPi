@@ -9,6 +9,9 @@ import os
 import datetime
 import rbutils
 import objects
+import math
+import time
+import datetime
 
 class SceneBase:
      def __init__(self):
@@ -78,7 +81,6 @@ def run_game(width, height, fps, starting_scene):
 class RobotScene(SceneBase):
      def __init__(self, updater):
           SceneBase.__init__(self)
-
           self.robots = None
           self.updater = updater
           self.isPrinting = False
@@ -126,7 +128,6 @@ class RobotScene(SceneBase):
           lineWidth = 1
 
           screen.fill(egg)
-
           #draw robots
           for rob in self.robots:
                newx = int(rob.pos[0] * screen.get_width())
@@ -149,8 +150,26 @@ class RobotScene(SceneBase):
                caption += ' (Printing to file)'
           pygame.display.set_caption(caption)
 
-          #TODO calculate entropy
-          #TODO take screenshot with timestamp and entropy in title
+          #calculate entropy
+          entropy = 0.0
+          remaining_robots = len(self.robots)
+          for key in cliques:
+               for clique in cliques[key]:
+                    pc = len(clique) * 1.0 / len(self.robots)
+                    ipc = 1.0 / pc
+                    entropy += (pc * math.log(ipc, 2))
+                    remaining_robots -= len(clique)
+
+          upc = 1.0 / len(self.robots)
+          uentropy = (upc * math.log(len(self.robots), 2))
+          entropy += (remaining_robots * uentropy)
+          entropy = round(entropy, 3)
+          print "Entropy: " + str(entropy)
+
+          #take screenshot with timestamp and entropy in title
+          ts = time.time()
+          timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y_%m_%d_%H_%M_%S')
+          pygame.image.save(screen, timestamp + "-" + str(entropy) + ".jpg")
 
 width = 360
 height = 360
