@@ -13,6 +13,10 @@ import math
 import time
 import datetime
 
+#TODO Forward FOV for robots
+#TODO Explore Quorum consensus through communication
+#TODO See which pieces of information are necessary to improve consensus
+
 class SceneBase:
      def __init__(self):
           self.next = self
