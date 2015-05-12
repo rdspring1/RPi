@@ -14,7 +14,8 @@ import time
 import datetime
 
 #TODO Forward FOV for robots
-#TODO Explore Quorum consensus through communication
+#TODO End simulation after all robots detect all objects in the area
+#TODO Explore Quorum consensus - communication, information type
 #TODO See which pieces of information are necessary to improve consensus
 
 class SceneBase:
