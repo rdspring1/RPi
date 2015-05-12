@@ -7,12 +7,13 @@ from pygame import gfxdraw
 import random
 import os
 import datetime
-import rbutils
-import objects
 import math
 import time
-import datetime
 import sys
+
+import rbutils
+import objects
+import quorum
 
 # Forward FOV for robots - Pygame doesn't support rotating Rect object
 # End simulation after all robots detect all objects in the area
@@ -93,10 +94,10 @@ class RobotScene(SceneBase):
           self.updater = updater
           self.isPrinting = False
           self.curFile = ''
-          self.objects = []
+          self.objects = {}
 
      def addObject(self, obj):
-         self.objects.append(obj)
+         self.objects[obj.name] = obj
 
      def ProcessInput(self, events, pressed_keys):
           for event in events:
@@ -152,7 +153,7 @@ class RobotScene(SceneBase):
           #          pygame.draw.aaline(screen, red, rob.screenPosition(), other.screenPosition())
 
           #draw objects
-          for obj in self.objects:
+          for key, obj in self.objects.iteritems():
                pygame.gfxdraw.box(screen, obj.rect, obj.color)
 
           #draw cliques
@@ -194,8 +195,8 @@ aqua = (0, 140, 255)
 mint = (120, 210, 170)
 purple = (215, 40, 215)
 
-#randomStep is run by default
-scene = RobotScene(rbutils.updateState)
+#scene = RobotScene(quorum.binaryObject)
+scene = RobotScene(quorum.imageSharing)
 scene.addObject(objects.Object('A', aqua, 100, 100, 50, 50))
 scene.addObject(objects.Object('B', mint, 200, 200, 100, 50))
 scene.addObject(objects.Object('C', purple, 50, 250, 50, 75))
