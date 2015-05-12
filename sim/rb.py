@@ -13,7 +13,7 @@ import math
 import time
 import datetime
 
-#TODO Forward FOV for robots
+# Forward FOV for robots - Pygame doesn't support rotating Rect object
 #TODO End simulation after all robots detect all objects in the area
 #TODO Explore Quorum consensus - communication, information type
 #TODO See which pieces of information are necessary to improve consensus
@@ -74,7 +74,7 @@ def run_game(width, height, fps, starting_scene):
 
           active_scene.ProcessInput(filtered_events, pressed_keys)
           if not paused:
-               active_scene.Update(screen.get_width(), screen.get_height())
+               active_scene.Update()
           active_scene.Render(screen)
 
           active_scene = active_scene.next
@@ -119,8 +119,8 @@ class RobotScene(SceneBase):
                          self.updater = rbutils.randomStep
                          self.isPrinting = False
 
-     def Update(self, width, height):
-          self.updater(self.objects, self.robots, width, height, 0, 1, 0, 1)
+     def Update(self):
+          self.updater(self.objects, self.robots, 0, 1, 0, 1)
           if self.isPrinting:
                rbutils.printState(self.curFile,self.robots)
 
@@ -145,7 +145,7 @@ class RobotScene(SceneBase):
                pygame.gfxdraw.box(screen, obj.rect, obj.color)
 
           #draw cliques
-          [cliques, edgeset] = rbutils.findCliques(self. objects, self.robots, screen.get_width(), screen.get_height())
+          [cliques, edgeset] = rbutils.findCliques(self. objects, self.robots)
           #draw connections
           for edge in edgeset:
                pygame.draw.aaline(screen, black, edge[0], edge[1], lineWidth)

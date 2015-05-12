@@ -4,28 +4,32 @@ import numpy
 
 #contains class information for individual robots
 class Robot:
-     def __init__(self, rid, x, y, color, sensor = 50, tally = 50, maxSpeed = 0.005, noise = 0.5, visibility = 0.15):
+     def __init__(self, rid, x, y, sw, sh, color):
           self.rid = rid
           self.pos = [x, y]
+          self.dim = [sw, sh]
           self.vel = [0, 0]
-          self.sensor = sensor
-          self.visibility = visibility
-          self.maxSpeed = maxSpeed
-          self.noise = noise
-          self.tally = tally
+          self.sensor = 50
+          self.visibility = 0.15
+          self.maxSpeed = 0.005
+          self.noise = 0.5
+          self.tally = 50
           self.rate = 0
           self.unit_dist = (2)**(1.0/2)
           self.color = color
           self.default_color = color
           self.objectlist = []
 
+     def screenPosition(self):
+          return (self.pos[0] * self.dim[0], self.pos[1] * self.dim[1])
+
      def randomizePosition(self):
           self.pos = [random.random(), random.random()]
 
-     def sensorArea(self, width, height):
+     def sensorArea(self):
           offset = self.sensor / 2.0
-          x = self.pos[0] * width - offset
-          y = self.pos[1] * height - offset
+          x = self.pos[0] * self.dim[0] - offset
+          y = self.pos[1] * self.dim[1] - offset
           return pygame.Rect(x, y, self.sensor, self.sensor)
 
 #returns list of "num" random robots
@@ -42,7 +46,7 @@ def initRobots(objects, width, height, num):
                     add = False
                     break
           if add:
-               rlist += [Robot(i, pos[0], pos[1], red)]
+               rlist.append(Robot(i, pos[0], pos[1], width, height, red))
                i += 1
      return rlist
 
@@ -93,11 +97,11 @@ def addNoise(rob, speed, nval):
      rob.pos[1] += (2 * random.random() - 1) * speed * nval
 
 #robot update function
-def updateState(objects, rlist, width, height, xlo, xhi, ylo, yhi):
-     randomStep(objects, rlist, width, height, xlo, xhi, ylo, yhi)
-     detectObjects(objects, rlist, width, height)
+def updateState(objects, rlist, xlo, xhi, ylo, yhi):
+     randomStep(objects, rlist, xlo, xhi, ylo, yhi)
+     detectObjects(objects, rlist)
 
-def findCliques(objects, rlist, width, height, commrange = 50):
+def findCliques(objects, rlist, commrange = 50):
      objset = {}
      for obj in objects:
           objset[obj.name] = []
@@ -117,35 +121,33 @@ def findCliques(objects, rlist, width, height, commrange = 50):
               while added:
                    added = False
                    for rob in clique:
-                        rpos = ((rob.pos[0] * width), (rob.pos[1] * height))
+                        rpos = rob.screenPosition()
                         for c in objset[key]:
-                             cpos = ((c.pos[0] * width), (c.pos[1] * height))
-                             dist = numpy.linalg.norm(numpy.array(rpos) - numpy.array(cpos))
+                             dist = numpy.linalg.norm(numpy.array(rpos) - numpy.array(c.screenPosition()))
                              if dist <= commrange:
                                   objset[key].remove(c)
                                   clique.append(c)
-                                  edgeset.append((cpos, rpos))
+                                  edgeset.append((c.screenPosition(), rpos))
                                   added = True
               #print key + str(len(cliques[key])) + "-" + str(len(clique))
      return [cliques, edgeset]
 
 #determine which objects each robot sees
-def detectObjects(objects, rlist, width, height):
+def detectObjects(objects, rlist):
      for rob in rlist:
           del rob.objectlist[:]
-          sensorArea = rob.sensorArea(width, height)
           rob.color = rob.default_color
           for obj in objects:
-               if obj.rect.colliderect(sensorArea):
+               if obj.rect.colliderect(rob.sensorArea()):
                     rob.objectlist.append(obj.name)
                     rob.color = obj.color
 
 #moves robots in rlist uniformly randomly within bounded box
-def randomStep(objects, rlist, width, height, xlo, xhi, ylo, yhi):
+def randomStep(objects, rlist, xlo, xhi, ylo, yhi):
      for rob in rlist:
           # check object collision
           for obj in objects:
-               if obj.rect.collidepoint(rob.pos[0]*width, rob.pos[1]*height):
+               if obj.rect.collidepoint(rob.screenPosition()):
                     rob.vel[0] *= -1.0
                     rob.vel[1] *= -1.0
                     rob.rate = 0
