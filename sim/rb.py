@@ -12,9 +12,10 @@ import objects
 import math
 import time
 import datetime
+import sys
 
 # Forward FOV for robots - Pygame doesn't support rotating Rect object
-#TODO End simulation after all robots detect all objects in the area
+# End simulation after all robots detect all objects in the area
 #TODO Explore Quorum consensus - communication, information type
 #TODO See which pieces of information are necessary to improve consensus
 
@@ -74,7 +75,9 @@ def run_game(width, height, fps, starting_scene):
 
           active_scene.ProcessInput(filtered_events, pressed_keys)
           if not paused:
-               active_scene.Update()
+               if active_scene.Update():
+                    print "Time Required: " + str(pygame.time.get_ticks() / 1000)
+                    sys.exit()
           active_scene.Render(screen)
 
           active_scene = active_scene.next
@@ -120,12 +123,14 @@ class RobotScene(SceneBase):
                          self.isPrinting = False
 
      def Update(self):
-          self.updater(self.objects, self.robots, 0, 1, 0, 1)
+          complete = self.updater(self.objects, self.robots, 0, 1, 0, 1)
           if self.isPrinting:
                rbutils.printState(self.curFile,self.robots)
+          return complete
 
      def Render(self, screen):
           black = (0, 0, 0)
+          red = (255, 15, 0)
           egg = (225, 235, 215)
 
           robRadius = 4
@@ -133,6 +138,7 @@ class RobotScene(SceneBase):
           lineWidth = 1
 
           screen.fill(egg)
+
           #draw robots
           for rob in self.robots:
                newx = int(rob.pos[0] * screen.get_width())
@@ -140,13 +146,18 @@ class RobotScene(SceneBase):
                pygame.gfxdraw.aacircle(screen, newx, newy, robRadius, black)
                pygame.gfxdraw.filled_circle(screen, newx, newy, robRadius, rob.color)
 
+          #draw neighbor connections
+          #for rob in self.robots:
+          #     for other in rob.neighborList:
+          #          pygame.draw.aaline(screen, red, rob.screenPosition(), other.screenPosition())
+
           #draw objects
           for obj in self.objects:
                pygame.gfxdraw.box(screen, obj.rect, obj.color)
 
           #draw cliques
           [cliques, edgeset] = rbutils.findCliques(self. objects, self.robots)
-          #draw connections
+          #draw connections between cliques
           for edge in edgeset:
                pygame.draw.aaline(screen, black, edge[0], edge[1], lineWidth)
 
@@ -188,5 +199,5 @@ scene = RobotScene(rbutils.updateState)
 scene.addObject(objects.Object('A', aqua, 100, 100, 50, 50))
 scene.addObject(objects.Object('B', mint, 200, 200, 100, 50))
 scene.addObject(objects.Object('C', purple, 50, 250, 50, 75))
-scene.robots = rbutils.initRobots(scene.objects, width, height, 100)
+scene.robots = rbutils.initRobots(scene.objects, width, height, 20)
 run_game(width, height, 60, scene)
