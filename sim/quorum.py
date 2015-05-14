@@ -18,7 +18,7 @@ class Action:
 # Explore
 # Track
 # Broadcast - Object Found
-def imageSharing(objects, rlist, xlo, xhi, ylo, yhi, threshold = 3):
+def imageSharing(objects, rlist, xlo, xhi, ylo, yhi, packet_loss = 0.2, threshold = 3):
      for rob in rlist:
           if rob.action == Action.Explore:
                randomMovement(objects, rob, xlo, xhi, ylo, yhi)
@@ -57,11 +57,12 @@ def imageSharing(objects, rlist, xlo, xhi, ylo, yhi, threshold = 3):
      for rob in rlist:
           for other in rob.neighborList:
                for object_name in rob.objectList:
-                    other.messageQueue.append(Message(rob.rid, object_name, objects[object_name].rect.center))
+                    if random.random() > packet_loss:
+                         other.messageQueue.append(Message(rob.rid, object_name, objects[object_name].rect.center))
      return complete
 
 #robot update function
-def binaryObject(objects, rlist, xlo, xhi, ylo, yhi, threshold = 3):
+def binaryObject(objects, rlist, xlo, xhi, ylo, yhi, packet_loss = 0.2, threshold = 3):
      for rob in rlist:
           if rob.action == Action.Explore:
                randomMovement(objects, rob, xlo, xhi, ylo, yhi)
@@ -92,7 +93,8 @@ def binaryObject(objects, rlist, xlo, xhi, ylo, yhi, threshold = 3):
      for rob in rlist:
           for other in rob.neighborList:
                for object_name in rob.objectList:
-                    other.messageQueue.append(Message(rob.rid, object_name))
+                    if random.random() > packet_loss:
+                         other.messageQueue.append(Message(rob.rid, object_name))
      return complete
 
 def processMessages(rlist, threshold):
@@ -103,9 +105,9 @@ def processMessages(rlist, threshold):
           for msg in rob.messageQueue:
                if msg.objectID in object_list:
                     object_list[msg.objectID].append(msg.rid)
-                    object_position[msg.objectID] = msg.position
                else:
                     object_list[msg.objectID] = [msg.rid]
+                    object_position[msg.objectID] = msg.position
           del rob.messageQueue[:]
 
           potentialObjects = []

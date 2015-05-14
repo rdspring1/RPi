@@ -9,7 +9,7 @@ from quorum import Action
 class Robot:
      def __init__(self, rid, x, y, sw, sh, color):
           # constants
-          self.commrange = 150
+          self.commrange = 300
           self.sensor = 50
           self.visibility = 0.15
           self.maxSpeed = 0.005
